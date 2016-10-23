@@ -93,51 +93,48 @@ namespace GA
                 printOrg(bestPerformer);
             }
 
-            Console.WriteLine("Temp gen has been filled \n " + tempGen.Count);
-                            
+            // Console.WriteLine("Temp gen has been filled \n " + tempGen.Count);
+            generateNextGen(tempGen);
         }
 
         // Use the temp population to get the next gerneration 
-        public static int[,] mutate(int[,] parents)
+        public static List<Organism> generateNextGen(List<Organism> gen)
         {
             //Add random mutaion latter
            
             var gene = 0;
-            int[,] newGen = new int[POPULATION,GENES];
-            int[] parentB = new int[GENES];
             //Cross over first 
-            
+            List<Organism> nextGen = new List<Organism>();
             for (var pop = 0; pop < POPULATION - 1; pop++)
             {
                 //parentB = getPartner(parents, pop);
+                nextGen.Add(new Organism(GENES));
                 var crossPoint = GetRandomNumber(0, 20);
-            
+
                 for (var b = 0; b < GENES; b++)
                 {
                     var random = GetRandomNumber(0, 1000);
-                     if (b <= crossPoint)
+                    if (b <= crossPoint)
                     {
-                        gene = parents[pop, b];
-                        newGen[pop, b] = gene;
-                       
+                        gene = gen[pop].genes[b];
+                        nextGen[pop].genes.SetValue(b, gene);
+
                     }
-                    else 
+                    else
                     {
-                        gene = parents[pop+1 ,b];
-                        newGen[pop, b] = gene;
+                        gene = gen[pop+1].genes[b];
+                        nextGen[pop].genes.SetValue(b, gene);
                     }
 
-                    //if (random == 1)
-                    //{
-                    //    gene = parent[pop, b] == 1 ? 0 : 1;
-                    //    newGen[pop, b] = gene;
-                    //    Console.WriteLine("MUTAION");
-
-                    //}
+                    if (random == 1)
+                    {
+                        nextGen[pop].genes.SetValue(b, nextGen[pop].genes[b] == 1 ? 1 : 0);
+                        Console.WriteLine("Mutate");
+                    }
 
                 }
             }
-            return newGen;
+            return nextGen;
       
         }
 

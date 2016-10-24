@@ -10,7 +10,7 @@ namespace GA
     public class Organism
     {
         public int fitness { get; set; }
-        public int genotype { get; set; }
+        public String phenotype { get; set; }
         public int[] genes { get; set; }
 
         public Organism(int Genes)

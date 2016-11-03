@@ -4,7 +4,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 /*
-    Things to do: Add config file to change global variables such as population ad gene size or global variable
+    Use selective gene cutting like CRISPR cut out weakest and include the best solution from a selection of partents
+    To inject desirable traits. 
+
 
 */
 namespace GA
@@ -15,11 +17,12 @@ namespace GA
         public static bool ideal = false;
         public static int perfectGen = 0;
         public static int bestGlobalScore = 0;
-        public static int ALLELES = 12;
+        public static int groupSize = 3;    //Must evenley divide 
         public static int fitnessWeight = 1;
         public static int phenotypicWeight = 1;
         public static readonly int POPULATION = 100;
-        public static readonly int GENES = 24;
+        public static readonly int GENES = 6;
+        public static int ALLELES = GENES/groupSize;
         public static List<Organism> GENERATION = new List<Organism>();
 
 
@@ -32,7 +35,7 @@ namespace GA
             {
                 getNextGen();
                 count++;
-
+               // Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
             }
             Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
             //printOrg(gen, perfectGen)
@@ -86,47 +89,71 @@ namespace GA
                         bestScore = score;
                         bestPerformer = sel;
                     }
-                    if (score == GENES)
-                    {
-                        ideal = true;
-                        printOrg(sel);
-                    }
+                    bestGlobalScore = bestGlobalScore < bestScore ? bestScore : bestGlobalScore;
                 }
 
                 var x = 0;
                 var y = 1;
+                var z = 2;
                 GENERATION[bestPerformer].phenotype = "";
+                GENERATION[bestPerformer].hasIdealGene = false;
                 for (int b = 0; b < ALLELES; b++)
                 {
-
+                    var location = b == (ALLELES - 1) ? true : false;
                     if (b > 0)
                     {
-                        x = x + 2;
-                        y = y + 2;
+                        x = x + groupSize;
+                        y = y + groupSize;
+                        z = z + groupSize;
                     }
-                    var gene = GENERATION[bestPerformer].genes[x].ToString() + GENERATION[bestPerformer].genes[y].ToString();
+                    var gene = GENERATION[bestPerformer].genes[x].ToString() + GENERATION[bestPerformer].genes[y].ToString() + GENERATION[bestPerformer].genes[z].ToString();
+                    
+                    switch (gene) {
+                        case "001":
+                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "a";
+                            break;
+                        case "010":
+                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "b";
+                            break;
+                        case "100":
+                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "c";
+                            break;
+                        case "011":
+                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "d";
+                            break;
+                        case "110":
+                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "e";
+                            break;
+                        case "101":
+                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "f";
+                            break;
+                        case "111":
+                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "g";
+                            break;
+                        case "000": //Rewarding solution for finding the deceptive peak.
+                            
+                            if (location)
+                            {
+                                //GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "x";
+                                GENERATION[bestPerformer].hasIdealGene = true;
+                                GENERATION[bestPerformer].fitness = GENERATION[bestPerformer].fitness + 100;
+                                Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" + GENERATION[bestPerformer].fitness);
+                            }
+                                GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "h";
+                                             
+                            break;
+                        default:
+                            Console.WriteLine("Type not found");
+                            break;
+                    }
 
-                    if (gene.Equals("00"))
-                    {
-                        GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "a";
-                    }
-                    else if (gene.Equals("01"))
-                    {
-                        GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "b";
-                    }
-                    else if (gene.Equals("10"))
-                    {
-                        GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "c";
-                    }
-                    else if (gene.Equals("11"))
-                    {
-                        GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "d";
-                    }
-                    else
-                    {
-                        throw new System.ArgumentException("ERROR!! -- Gene pair not found");
-                    }
                 }
+                if (score >= (GENES-3) && GENERATION[bestPerformer].hasIdealGene)
+                {
+                    ideal = true;
+                    printOrg(bestPerformer);
+                }
+                printOrg(bestPerformer);
                 tempGen.Add(GENERATION[bestPerformer]);
             }
             GENERATION = generateNextGen(tempGen);
@@ -142,11 +169,11 @@ namespace GA
             {
                 var parentB = getPartner(gen, pop);
                 nextGen.Add(new Organism(GENES));
-                var crossPoint = GetRandomNumber(0, 20);
+                var crossPoint = GetRandomNumber(0, GENES);
 
                 for (var b = 0; b < GENES; b++)
                 {
-                    var random = GetRandomNumber(0, 1000);
+                    var random = GetRandomNumber(0, 4000);
                     if (b <= crossPoint)
                     {
                         gene = gen[pop].genes[b];
@@ -161,7 +188,7 @@ namespace GA
 
                     if (random == 1)
                     {
-                        if(nextGen[pop].genes[b] == 0)
+                        if (nextGen[pop].genes[b] == 0)
                         {
                             nextGen[pop].genes[b] = 1;
                         }
@@ -169,7 +196,7 @@ namespace GA
                         {
                             nextGen[pop].genes[b] = 0;
                         }
-                        Console.WriteLine("Mutate");
+                        //Console.WriteLine("Mutate");
                     }
 
                 }
@@ -187,7 +214,7 @@ namespace GA
             var bestScore = 0;
             for (var a = 0; a < testSize; a++)
             {
-                var rand = GetRandomNumber(0, 100);
+                var rand = GetRandomNumber(0, POPULATION);
                 for (var b = 0; b < ALLELES; b++)
                 {
                     var l1 = gen[rand].phenotype[b];
@@ -196,7 +223,7 @@ namespace GA
                     tempDiff = Math.Abs(l1 - l2);
                     diff = diff + tempDiff;
                 }
-                score = gen[sel].fitness + diff;
+                score = (fitnessWeight * gen[sel].fitness) + (phenotypicWeight * diff) + (gen[sel].hasIdealGene ? 1000 : 0);
                 if (score > bestScore)
                 {
                     bestScore = score;

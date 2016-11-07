@@ -10,7 +10,7 @@ using System.Threading.Tasks;
          add ability to decide to run with phenotype or not 
          add config 
          run multiplie times to gain accurate results
-
+         make output to text file 
 */
 namespace GA
 {
@@ -19,29 +19,40 @@ namespace GA
         //Globals
         public static bool ideal = false;
         public static int perfectGen = 0;
+        public static int uniqueLocation = 5;
         public static int bestGlobalScore = 0;
         public static int groupSize = 3;    //Must evenley divide 
         public static int fitnessWeight = 1;
         public static int phenotypicWeight = 1;
         public static readonly int POPULATION = 100;
-        public static readonly int GENES = 6;
+        public static readonly int GENES = 30;
         public static int ALLELES = GENES/groupSize;
+        public static int deceptiveReward = 50;
+        public static bool usePehnotype = false;
         public static List<Organism> GENERATION = new List<Organism>();
 
 
         // Main method call the generate population method and all proccedding methods
-        static void Main(string[] args)
+        public static int[] runGA(int iterations)
         {
-            populate();
-            var count = 0;
-            while (!ideal)
+            int[] results = new int[iterations];
+            for (var runs = 0; runs < iterations; ++runs)
             {
-                getNextGen();
-                count++;
-               // Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
+                populate();
+                var count = 0;
+                while (!ideal)
+                {
+                    getNextGen();
+                    count++;
+                    // Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
+                }
+               // Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
+                results[runs] = count;
+                ideal = false;
+                //printOrg(gen, perfectGen)
+                Console.WriteLine("At Run: " + runs);
             }
-            Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
-            //printOrg(gen, perfectGen)
+            return results;
         }
 
         //Populates the array with random 1's and 0's
@@ -92,74 +103,17 @@ namespace GA
                     {
                         bestScore = score;
                         bestPerformer = sel;
+                        if (score >= GENES && !usePehnotype)
+                        {
+                            ideal = true;
+                           // printOrg(bestPerformer);
+                        }
+
                     }
                     bestGlobalScore = bestGlobalScore < bestScore ? bestScore : bestGlobalScore;
-                }
-
-                var x = 0;
-                var y = 1;
-                var z = 2;
-                GENERATION[bestPerformer].phenotype = "";
-                GENERATION[bestPerformer].hasIdealGene = false;
-                for (int b = 0; b < ALLELES; b++)
-                {
-                    var location = b == (ALLELES - 1) ? true : false;
-                    if (b > 0)
-                    {
-                        x = x + groupSize;
-                        y = y + groupSize;
-                        z = z + groupSize;
-                    }
-                    var gene = GENERATION[bestPerformer].genes[x].ToString() + GENERATION[bestPerformer].genes[y].ToString() + GENERATION[bestPerformer].genes[z].ToString();
-                    
-                    switch (gene) {
-                        case "001":
-                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "a";
-                            break;
-                        case "010":
-                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "b";
-                            break;
-                        case "100":
-                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "c";
-                            break;
-                        case "011":
-                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "d";
-                            break;
-                        case "110":
-                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "e";
-                            break;
-                        case "101":
-                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "f";
-                            break;
-                        case "111":
-                            GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "g";
-                            break;
-                        case "000": //Rewarding solution for finding the deceptive peak.
-                            
-                            if (location)
-                            {
-                                //GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "x";
-                                GENERATION[bestPerformer].hasIdealGene = true;
-                                GENERATION[bestPerformer].fitness = GENERATION[bestPerformer].fitness + 100;
-                                Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" +"---->"+ GENERATION[bestPerformer].fitness);
-                                printOrg(bestPerformer);
-                            }
-                                GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "h";
-                                             
-                            break;
-                        default:
-                            Console.WriteLine("Type not found");
-                            break;
-                    }
-
-                }
-                if (score >= (GENES-3) && GENERATION[bestPerformer].hasIdealGene)
-                {
-                    ideal = true;
-                    printOrg(bestPerformer);
-                }
+                }            
                 //printOrg(bestPerformer);
-                tempGen.Add(GENERATION[bestPerformer]);
+                tempGen.Add(usePehnotype ? getPehnotype(bestPerformer, bestScore): GENERATION[bestPerformer]);
             }
             GENERATION = generateNextGen(tempGen);
         }
@@ -222,13 +176,16 @@ namespace GA
                 var rand = GetRandomNumber(0, POPULATION);
                 for (var b = 0; b < ALLELES; b++)
                 {
-                    var l1 = gen[rand].phenotype[b];
-                    var l2 = gen[sel].phenotype[b];
-                    var tempDiff = 0;
-                    tempDiff = Math.Abs(l1 - l2);
-                    diff = diff + tempDiff;
+                    if (usePehnotype)
+                    {
+                        var l1 = gen[rand].phenotype[b];
+                        var l2 = gen[sel].phenotype[b];
+                        var tempDiff = 0;
+                        tempDiff = Math.Abs(l1 - l2);
+                        diff = diff + tempDiff;
+                    }
                 }
-                score = (fitnessWeight * gen[sel].fitness) + (phenotypicWeight * diff) + (gen[sel].hasIdealGene ? 1000 : 0);
+                score = (fitnessWeight * gen[sel].fitness) + (phenotypicWeight * diff);
                 if (score > bestScore)
                 {
                     bestScore = score;
@@ -238,6 +195,76 @@ namespace GA
 
             return bestPartner;
         }
+        public static Organism getPehnotype(int organism ,int score)
+        {
+            var x = 0;
+            var y = 1;
+            var z = 2;
+            GENERATION[organism].phenotype = "";
+            GENERATION[organism].hasIdealGene = false;
+            for (int b = 0; b < ALLELES; b++)
+            {
+                var location = b == (ALLELES - 1) ? true : false;
+                if (b > 0)
+                {
+                    x = x + groupSize;
+                    y = y + groupSize;
+                    z = z + groupSize;
+                }
+                var gene = GENERATION[organism].genes[x].ToString() + GENERATION[organism].genes[y].ToString() + GENERATION[organism].genes[z].ToString();
+
+                switch (gene)
+                {
+                    case "001":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "a";
+                        break;
+                    case "010":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "b";
+                        break;
+                    case "100":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "c";
+                        break;
+                    case "011":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "d";
+                        break;
+                    case "110":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "e";
+                        break;
+                    case "101":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "f";
+                        break;
+                    case "111":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "g";
+                        break;
+                    case "000": //Rewarding solution for finding the deceptive peak.
+
+                        if (location)
+                        {
+                            //GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "x";
+                            GENERATION[organism].hasIdealGene = true;
+                            GENERATION[organism].fitness = GENERATION[organism].fitness + deceptiveReward;
+                            Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" + "---->" + GENERATION[organism].fitness);
+                            printOrg(organism);
+                        }
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "h";
+
+                        break;
+                    default:
+                        Console.WriteLine("Type not found");
+                        break;
+                }
+
+            }
+            if (score >= (GENES - 3) && GENERATION[organism].hasIdealGene)
+            {
+                ideal = true;
+                printOrg(organism);
+            }
+
+            return GENERATION[organism];
+
+        }
+
 
         //Utiltiy Functions 
 

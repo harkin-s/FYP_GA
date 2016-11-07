@@ -4,9 +4,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 /*
-    Use selective gene cutting like CRISPR cut out weakest and include the best solution from a selection of partents
-    To inject desirable traits. 
-
+   TODO: Check phenotype is working properley 
+         add more genes 30 gense to make 10 sub problems 
+         intergrate gnuplot to make charts of the results 
+         add ability to decide to run with phenotype or not 
+         add config 
+         run multiplie times to gain accurate results
 
 */
 namespace GA
@@ -62,6 +65,7 @@ namespace GA
         {
             //First evaluate the gen using tournoment selction 
             List<Organism> tempGen = new List<Organism>();
+            tempGen.Clear();
             var compSize = 4;
             int[,] tourn = new int[compSize, GENES];
             var bestPerformer = 0;
@@ -137,7 +141,8 @@ namespace GA
                                 //GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "x";
                                 GENERATION[bestPerformer].hasIdealGene = true;
                                 GENERATION[bestPerformer].fitness = GENERATION[bestPerformer].fitness + 100;
-                                Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" + GENERATION[bestPerformer].fitness);
+                                Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" +"---->"+ GENERATION[bestPerformer].fitness);
+                                printOrg(bestPerformer);
                             }
                                 GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "h";
                                              
@@ -153,7 +158,7 @@ namespace GA
                     ideal = true;
                     printOrg(bestPerformer);
                 }
-                printOrg(bestPerformer);
+                //printOrg(bestPerformer);
                 tempGen.Add(GENERATION[bestPerformer]);
             }
             GENERATION = generateNextGen(tempGen);
@@ -268,6 +273,5 @@ namespace GA
                 return getrandom.Next(min, max);
             }
         }
-
     }
 }

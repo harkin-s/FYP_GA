@@ -19,15 +19,16 @@ namespace GA
         //Globals
         public static bool ideal = false;
         public static int perfectGen = 0;
-        public static int uniqueLocation = 5;
+        public static int uniqueLocation = 1;
         public static int bestGlobalScore = 0;
         public static int groupSize = 3;    //Must evenley divide 
-        public static int fitnessWeight = 1;
+        public static int fitnessWeight = 2;
         public static int phenotypicWeight = 1;
         public static readonly int POPULATION = 100;
         public static readonly int GENES = 30;
         public static int ALLELES = GENES/groupSize;
         public static int deceptiveReward = 50;
+        public static bool deceptiveLandscape = false;
         public static bool usePehnotype = false;
         public static List<Organism> GENERATION = new List<Organism>();
 
@@ -49,8 +50,6 @@ namespace GA
                // Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
                 results[runs] = count;
                 ideal = false;
-                //printOrg(gen, perfectGen)
-                Console.WriteLine("At Run: " + runs);
             }
             return results;
         }
@@ -111,9 +110,16 @@ namespace GA
 
                     }
                     bestGlobalScore = bestGlobalScore < bestScore ? bestScore : bestGlobalScore;
-                }            
+                }
                 //printOrg(bestPerformer);
-                tempGen.Add(usePehnotype ? getPehnotype(bestPerformer, bestScore): GENERATION[bestPerformer]);
+                if (deceptiveLandscape)
+                {
+                    tempGen.Add(usePehnotype ? getPehnotypeWithDeceptiveLandsape(bestPerformer, bestScore) : GENERATION[bestPerformer]);
+                }
+                else
+                {
+                    tempGen.Add(usePehnotype ? getPehnotypeWithOutDeceptiveLandsape(bestPerformer, bestScore) : GENERATION[bestPerformer]);
+                }
             }
             GENERATION = generateNextGen(tempGen);
         }
@@ -195,7 +201,7 @@ namespace GA
 
             return bestPartner;
         }
-        public static Organism getPehnotype(int organism ,int score)
+        public static Organism getPehnotypeWithDeceptiveLandsape(int organism ,int score)
         {
             var x = 0;
             var y = 1;
@@ -204,7 +210,7 @@ namespace GA
             GENERATION[organism].hasIdealGene = false;
             for (int b = 0; b < ALLELES; b++)
             {
-                var location = b == (ALLELES - 1) ? true : false;
+                var location = b == uniqueLocation ? true : false;
                 if (b > 0)
                 {
                     x = x + groupSize;
@@ -259,6 +265,65 @@ namespace GA
             {
                 ideal = true;
                 printOrg(organism);
+            }
+
+            return GENERATION[organism];
+
+        }
+
+        public static Organism getPehnotypeWithOutDeceptiveLandsape(int organism, int score)
+        {
+            var x = 0;
+            var y = 1;
+            var z = 2;
+            GENERATION[organism].phenotype = "";
+            GENERATION[organism].hasIdealGene = false;
+            for (int b = 0; b < ALLELES; b++)
+            {
+                var location = b == uniqueLocation ? true : false;
+                if (b > 0)
+                {
+                    x = x + groupSize;
+                    y = y + groupSize;
+                    z = z + groupSize;
+                }
+                var gene = GENERATION[organism].genes[x].ToString() + GENERATION[organism].genes[y].ToString() + GENERATION[organism].genes[z].ToString();
+
+                switch (gene)
+                {
+                    case "000":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "a";
+                        break;
+                    case "001":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "b";
+                        break;
+                    case "010":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "c";
+                        break;
+                    case "011":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "d";
+                        break;
+                    case "100":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "e";
+                        break;
+                    case "101":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "f";
+                        break;
+                    case "110":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "g";
+                        break;
+                    case "111":
+                        GENERATION[organism].phenotype = GENERATION[organism].phenotype + "h";
+                        break;
+                    default:
+                        Console.WriteLine("Type not found");
+                        break;
+                }
+
+            }
+            if (score >= GENES)
+            {
+                ideal = true;
             }
 
             return GENERATION[organism];

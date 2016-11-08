@@ -11,18 +11,25 @@ namespace GA
         public static void Main(String[] args)
         {
             var runSize = 100;
-            var total = 0;
+            var runTime = 100;
             int[] ans = new int[runSize];
-            ans = GeneticAlgorithm.runGA(runSize);
-
-            for(var it = 0; it < runSize; it++)
+            String[] results = new String[runTime];
+            
+           
+            for (var a = 0; a < runTime; a++)
             {
-               
-                Console.WriteLine("Result 1:" + ans[it]);
-                total = total + ans[it];
-                
+                ans = GeneticAlgorithm.runGA(runSize);
+                Console.WriteLine("The Average of the Results are: " + ans.Average());
+                results[a] = ans.Average().ToString();
             }
-            Console.WriteLine("The Average of the Results are: " + total / runSize);
+            using (System.IO.StreamWriter file =
+            new System.IO.StreamWriter(@"C:\Users\Sean\Documents\FYP_Results\results.txt"))
+            {
+                foreach (String res in results)
+                {             
+                    file.WriteLine(res);   
+                }
+            }
         }
     }
 }

@@ -19,17 +19,17 @@ namespace GA
         //Globals
         public static bool ideal = false;
         public static int perfectGen = 0;
-        public static int uniqueLocation = 1;
+        public static int uniqueLocation = 0;
         public static int bestGlobalScore = 0;
         public static int groupSize = 3;    //Must evenley divide 
         public static int fitnessWeight = 2;
         public static int phenotypicWeight = 1;
         public static readonly int POPULATION = 100;
-        public static readonly int GENES = 30;
+        public static readonly int GENES = 12;
         public static int ALLELES = GENES/groupSize;
-        public static int deceptiveReward = 50;
-        public static bool deceptiveLandscape = false;
-        public static bool usePehnotype = false;
+        public static int deceptiveReward = 500;
+        public static bool deceptiveLandscape = true;
+        public static bool usePehnotype = true;
         public static List<Organism> GENERATION = new List<Organism>();
 
 
@@ -45,6 +45,11 @@ namespace GA
                 {
                     getNextGen();
                     count++;
+                    if(count >= 100)
+                    {
+                        ideal = true;
+                        //Console.WriteLine("No optimal has been found after 100 genertaions");
+                    }
                     // Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
                 }
                // Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
@@ -249,8 +254,8 @@ namespace GA
                             //GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "x";
                             GENERATION[organism].hasIdealGene = true;
                             GENERATION[organism].fitness = GENERATION[organism].fitness + deceptiveReward;
-                            Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" + "---->" + GENERATION[organism].fitness);
-                            printOrg(organism);
+                           // Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" + "---->" + GENERATION[organism].fitness);
+                           // printOrg(organism);
                         }
                         GENERATION[organism].phenotype = GENERATION[organism].phenotype + "h";
 
@@ -264,7 +269,7 @@ namespace GA
             if (score >= (GENES - 3) && GENERATION[organism].hasIdealGene)
             {
                 ideal = true;
-                printOrg(organism);
+               // printOrg(organism);
             }
 
             return GENERATION[organism];

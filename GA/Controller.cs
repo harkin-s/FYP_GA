@@ -19,6 +19,11 @@ namespace GA
             for (var a = 0; a < runTime; a++)
             {
                 ans = GeneticAlgorithm.runGA(runSize);
+              
+                if (ans.Sum() == 0)
+                {
+                    Console.WriteLine("No ideal has been found");
+                }
                 Console.WriteLine("The Average of the Results are: " + ans.Average());
                 results[a] = ans.Average().ToString();
             }

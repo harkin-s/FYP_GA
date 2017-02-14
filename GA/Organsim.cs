@@ -12,7 +12,7 @@ namespace GA
         public int fitness { get; set; }
         public String phenotype { get; set; }
         public int[] genes { get; set; }
-        public bool hasIdealGene { get; set; }
+        public int numberOfdecptives { get; set; }
 
         public Organism(int Genes)
         {

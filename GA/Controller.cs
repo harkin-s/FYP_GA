@@ -24,11 +24,11 @@ namespace GA
                 {
                     Console.WriteLine("No ideal has been found");
                 }
-                Console.WriteLine("The Average of the Results are: " + ans.Average());
+                Console.WriteLine("The Average of the Results are: " + ans.Average() + " At run: " + a);
                 results[a] = ans.Average().ToString();
             }
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter(@"C:\Users\Sean\Documents\FYP_Results\results.txt"))
+            new System.IO.StreamWriter(@"C:\Users\shark\Documents\FYP_Results\results.txt"))
             {
                 foreach (String res in results)
                 {             

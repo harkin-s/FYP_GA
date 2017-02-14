@@ -19,23 +19,39 @@ namespace GA
         //Globals
         public static bool ideal = false;
         public static int perfectGen = 0;
-        public static int uniqueLocation = 0;
+        public static List<int> uniqueLocations = new List<int>();
         public static int bestGlobalScore = 0;
         public static int groupSize = 3;    //Must evenley divide 
         public static int fitnessWeight = 2;
         public static int phenotypicWeight = 1;
         public static readonly int POPULATION = 100;
-        public static readonly int GENES = 12;
+        public static readonly int GENES = 30;
         public static int ALLELES = GENES/groupSize;
         public static int deceptiveReward = 500;
+        private static int gnumOfDec = 0;
         public static bool deceptiveLandscape = true;
         public static bool usePehnotype = true;
+        private static bool varyDecptivePosition = true;
         public static List<Organism> GENERATION = new List<Organism>();
 
 
         // Main method call the generate population method and all proccedding methods
         public static int[] runGA(int iterations)
         {
+            uniqueLocations.Clear();
+            if (varyDecptivePosition)
+            {
+                var numOfDec = GetRandomNumber(1, ALLELES);
+                while(uniqueLocations.Count != numOfDec)
+                {
+                    var loc = GetRandomNumber(1, ALLELES);
+                    if (!uniqueLocations.Contains(loc))
+                    {
+                        uniqueLocations.Add(loc);
+                    }
+                }
+                gnumOfDec = numOfDec;
+            }
             int[] results = new int[iterations];
             for (var runs = 0; runs < iterations; ++runs)
             {
@@ -129,7 +145,7 @@ namespace GA
             GENERATION = generateNextGen(tempGen);
         }
 
-        // Use the temp population to get the next gerneration 
+        // Use the temp population to get the next gerneration using crossover 
         public static List<Organism> generateNextGen(List<Organism> gen)
         {
             var gene = 0;
@@ -212,10 +228,10 @@ namespace GA
             var y = 1;
             var z = 2;
             GENERATION[organism].phenotype = "";
-            GENERATION[organism].hasIdealGene = false;
+            GENERATION[organism].numberOfdecptives = 0;
             for (int b = 0; b < ALLELES; b++)
             {
-                var location = b == uniqueLocation ? true : false;
+                var location = uniqueLocations.Contains(b) ? true : false;
                 if (b > 0)
                 {
                     x = x + groupSize;
@@ -252,7 +268,7 @@ namespace GA
                         if (location)
                         {
                             //GENERATION[bestPerformer].phenotype = GENERATION[bestPerformer].phenotype + "x";
-                            GENERATION[organism].hasIdealGene = true;
+                            ++GENERATION[organism].numberOfdecptives;
                             GENERATION[organism].fitness = GENERATION[organism].fitness + deceptiveReward;
                            // Console.WriteLine("HAS FOUND DECEPTIVE LANDSCAPE" + "---->" + GENERATION[organism].fitness);
                            // printOrg(organism);
@@ -266,7 +282,7 @@ namespace GA
                 }
 
             }
-            if (score >= (GENES - 3) && GENERATION[organism].hasIdealGene)
+            if (score >= (GENES - 3*uniqueLocations.Count) && GENERATION[organism].numberOfdecptives == gnumOfDec )
             {
                 ideal = true;
                // printOrg(organism);
@@ -282,10 +298,10 @@ namespace GA
             var y = 1;
             var z = 2;
             GENERATION[organism].phenotype = "";
-            GENERATION[organism].hasIdealGene = false;
+            GENERATION[organism].numberOfdecptives = 0;
             for (int b = 0; b < ALLELES; b++)
             {
-                var location = b == uniqueLocation ? true : false;
+                var location = b == uniqueLocations[b] ? true : false;
                 if (b > 0)
                 {
                     x = x + groupSize;

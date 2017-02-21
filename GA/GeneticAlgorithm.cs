@@ -21,20 +21,22 @@ namespace GA
         public static bool ideal = false;
         public static int perfectGen = 0;
         public static List<int> deceptiveLocations = new List<int>();
+        private static int numOfCrossPoints = 1;        //Determines how many cross points the cross over algoithm will have
         public static int bestGlobalScore = 0;
         public static List<int> alleleSizes = new List<int>();    //Must evenley divide 
-        public static int fitnessWeight = 1;
+        public static int fitnessWeight = 3;
         public static int phenotypicWeight = 1;
         private static int totalDecptiveBits = 0;
         public static readonly int POPULATION = 100;
         public static readonly int GENES = 30;
         public static int ALLELES = 0;      //set to 8 as need 
-        public static int deceptiveReward = 30;
+        public static int deceptiveReward = 300;
         private static int gnumOfDec = 0;
-        public static bool deceptiveLandscape = false;
+        public static bool deceptiveLandscape = true;
         public static bool usePehnotype = true;
         private static bool varyDecptivePosition = false;
         private static bool varyAlleles = false;
+        private static int numWithDecptive = 0;
         public static List<Organism> GENERATION = new List<Organism>();
 
 
@@ -76,7 +78,7 @@ namespace GA
                         alleleSizes.Add(3);
                     }
                 }
-                ALLELES = GENES / alleleSizes.Count;
+                ALLELES = alleleSizes.Count;
             }
             else
             {
@@ -132,6 +134,8 @@ namespace GA
                 var count = 0;
                 while (!ideal)
                 {
+                    Console.WriteLine("Num of Org with deceptive: " + numWithDecptive + " At gen: " +count);
+                    numWithDecptive = 0;
                     getNextGen();
                     count++;
                     if(count >= 100)
@@ -211,33 +215,50 @@ namespace GA
         // Use the temp population to get the next gerneration using crossover and partner selection
         public static List<Organism> generateNextGen(List<Organism> gen)
         {
-            var gene = 0;
+            List<int> gene = new List<int>();
+            List<int> tempGenes = new List<int>();
             //Cross over first 
             List<Organism> nextGen = new List<Organism>();
             for (var pop = 0; pop < POPULATION; pop++)
-            {   
+            {
                 // Get best partner for organism 
                 var parentB = getPartner(gen, pop);
                 nextGen.Add(new Organism(GENES));
 
                 //This is the cross over algorithm uses random cross point
-                var crossPoint = GetRandomNumber(0, GENES);
+                // Maybe add weighted cross over.
+                //Add ability for multiple cross over.
+                List<int> crossPoitns = new List<int>();
 
-                for (var b = 0; b < GENES; b++)
+                while(crossPoitns.Count != numOfCrossPoints)
                 {
+                    var point = GetRandomNumber(0, GENES);
+                    if (!crossPoitns.Contains(point))
+                    {
+                        crossPoitns.Add(point);
+                    }
+                }
+                crossPoitns.Sort();
+                var startPoint = 0;
+                var endPoint = 0;
+                for (var b = 0; b <= crossPoitns.Count; b++)
+                {
+                    endPoint = b == crossPoitns.Count-1 ? crossPoitns[b] : GENES;
                     var random = GetRandomNumber(0, 4000);  //Random mutation factor 0.025% chance 
-                    if (b <= crossPoint)
+                    if (b % 2 == 0)     // Number is even
                     {
-                        gene = gen[pop].genes[b];
-                        nextGen[pop].genes[b] = gene;
-
+                        gene = gen[pop].spliceGenes(startPoint, endPoint);
+                        nextGen[pop].addGenes(gene, startPoint,endPoint);
+                        startPoint += crossPoitns[b];
+                      
                     }
-                    else
+                    else if (b % 2 != 0)
                     {
-                        gene = gen[parentB].genes[b];
-                        nextGen[pop].genes[b] = gene;
+                        gene = gen[parentB].spliceGenes(startPoint, endPoint);
+                        nextGen[pop].addGenes(gene, startPoint, endPoint);
+                        startPoint += crossPoitns[b];
                     }
-
+                    //Mutaion of gene
                     if (random == 1)
                     {
                         if (nextGen[pop].genes[b] == 0)
@@ -248,7 +269,7 @@ namespace GA
                         {
                             nextGen[pop].genes[b] = 0;
                         }
-                        //Console.WriteLine("Mutate");
+                       // Console.WriteLine("Mutate");
                     }
 
                 }
@@ -305,7 +326,6 @@ namespace GA
         {
             foreach(Organism org in gen)
             {
-
                 var fitness = from g in org.genes
                               where g > 0
                               select g;
@@ -344,7 +364,7 @@ namespace GA
             {
                 List<int> gene = new List<int>();
                 endCut = x > 0 ? alleleSizes[x] + endCut : alleleSizes[x];
-                gene = org.getGenes(currStartCut, endCut);
+                gene = org.spliceGenes(currStartCut, endCut);
                 currStartCut += alleleSizes[x];
 
                 var val = from a in gene
@@ -354,7 +374,9 @@ namespace GA
                 if (deceptiveLocations.Contains(x) && val.Sum() == 0 )
                 {
                     org.numberOfdecptives++;
+                    numWithDecptive++;
                     //Console.WriteLine(" Decptive found !!");
+                    //printOrg(org);
                 }
             }
         }

@@ -19,7 +19,7 @@ namespace GA
             genes = new int[Genes];
         }
 
-        public List<int> getGenes(int from, int to)
+        public List<int> spliceGenes(int from, int to)
         {
             List<int> selGenes = new List<int>();
             for(var i = from  ; i<to; i++)
@@ -28,6 +28,14 @@ namespace GA
             }
 
             return selGenes;
+        }
+
+        public void addGenes(List<int> iGenes, int from, int to)
+        {
+            for(var g=from; g < to; g++)
+            {
+                genes[g] = iGenes[g-from];
+            }
         }
 
     }

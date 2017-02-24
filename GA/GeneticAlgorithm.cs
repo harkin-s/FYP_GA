@@ -21,14 +21,14 @@ namespace GA
         public static bool ideal = false;
         public static int perfectGen = 0;
         public static List<int> deceptiveLocations = new List<int>();
-        private static int numOfCrossPoints = 1;        //Determines how many cross points the cross over algoithm will have
+        private static int numOfCrossPoints = 4;        //Determines how many cross points the cross over algoithm will have
         public static int bestGlobalScore = 0;
         public static List<int> alleleSizes = new List<int>();    //Must evenley divide 
-        public static int fitnessWeight = 3;
+        public static int fitnessWeight = 1;
         public static int phenotypicWeight = 1;
         private static int totalDecptiveBits = 0;
         public static readonly int POPULATION = 100;
-        public static readonly int GENES = 30;
+        public static readonly int GENES = 15;
         public static int ALLELES = 0;      //set to 8 as need 
         public static int deceptiveReward = 300;
         private static int gnumOfDec = 0;
@@ -97,6 +97,7 @@ namespace GA
                 if (varyDecptivePosition)
                 {
                     var numOfDec = GetRandomNumber(1, ALLELES);
+                    numOfDec = 1;
                     while (deceptiveLocations.Count != numOfDec)
                     {
                         var loc = GetRandomNumber(1, ALLELES);
@@ -134,7 +135,7 @@ namespace GA
                 var count = 0;
                 while (!ideal)
                 {
-                    Console.WriteLine("Num of Org with deceptive: " + numWithDecptive + " At gen: " +count);
+                   // Console.WriteLine("Num of Org with deceptive: " + numWithDecptive + " At gen: " +count);
                     numWithDecptive = 0;
                     getNextGen();
                     count++;
@@ -143,7 +144,7 @@ namespace GA
                         ideal = true;
                         //Console.WriteLine("No optimal has been found after 100 genertaions");
                     }
-                    // Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
+                    //Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
                 }
                // Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
                 results[runs] = count;
@@ -217,20 +218,16 @@ namespace GA
         {
             List<int> gene = new List<int>();
             List<int> tempGenes = new List<int>();
+            List<int> crossPoitns = new List<int>();
             //Cross over first 
+
             List<Organism> nextGen = new List<Organism>();
             for (var pop = 0; pop < POPULATION; pop++)
             {
                 // Get best partner for organism 
                 var parentB = getPartner(gen, pop);
                 nextGen.Add(new Organism(GENES));
-
-                //This is the cross over algorithm uses random cross point
-                // Maybe add weighted cross over.
-                //Add ability for multiple cross over.
-                List<int> crossPoitns = new List<int>();
-
-                while(crossPoitns.Count != numOfCrossPoints)
+                while (crossPoitns.Count != numOfCrossPoints)
                 {
                     var point = GetRandomNumber(0, GENES);
                     if (!crossPoitns.Contains(point))
@@ -238,41 +235,55 @@ namespace GA
                         crossPoitns.Add(point);
                     }
                 }
+
+                crossPoitns.Add(0);
                 crossPoitns.Sort();
-                var startPoint = 0;
+
+                // This is the cross over algorithm uses random cross point.
+                // Test use of different number of cross points 
+                // Maybe add weighted cross over or min differenc between cross points 
+                // Add ability for multiple cross over.
+                // Should cross points change for each cross over or stay the same for each generation 
+
                 var endPoint = 0;
-                for (var b = 0; b <= crossPoitns.Count; b++)
+                var parent = 0;
+                for (var b = 0; b < crossPoitns.Count; b++)
                 {
-                    endPoint = b == crossPoitns.Count-1 ? crossPoitns[b] : GENES;
+                    endPoint = b+1 < crossPoitns.Count  ? crossPoitns[b + 1] : GENES;
                     var random = GetRandomNumber(0, 4000);  //Random mutation factor 0.025% chance 
-                    if (b % 2 == 0)     // Number is even
+                    
+                    if (parent == 0)     // Number is even
                     {
-                        gene = gen[pop].spliceGenes(startPoint, endPoint);
-                        nextGen[pop].addGenes(gene, startPoint,endPoint);
-                        startPoint += crossPoitns[b];
+                        gene = gen[pop].spliceGenes(crossPoitns[b], endPoint);
+                        nextGen[pop].addGenes(gene, crossPoitns[b], endPoint);
+                        parent = 1;
                       
                     }
-                    else if (b % 2 != 0)
+                    else if (parent == 1)
                     {
-                        gene = gen[parentB].spliceGenes(startPoint, endPoint);
-                        nextGen[pop].addGenes(gene, startPoint, endPoint);
-                        startPoint += crossPoitns[b];
+                        gene = gen[parentB].spliceGenes(crossPoitns[b], endPoint);
+                        nextGen[pop].addGenes(gene, crossPoitns[b], endPoint);
+                        parent = 0; 
                     }
                     //Mutaion of gene
                     if (random == 1)
                     {
-                        if (nextGen[pop].genes[b] == 0)
+                        var randG = GetRandomNumber(crossPoitns[b], endPoint);
+                        if (nextGen[pop].genes[randG] == 0)
                         {
-                            nextGen[pop].genes[b] = 1;
+                            nextGen[pop].genes[randG] = 1;
                         }
                         else
                         {
-                            nextGen[pop].genes[b] = 0;
+                            nextGen[pop].genes[randG] = 0;
                         }
                        // Console.WriteLine("Mutate");
                     }
 
+                   
                 }
+                crossPoitns.Clear();
+                //Console.WriteLine("At Population: "+ pop);
             }
 
             checkForIdeal(nextGen);
@@ -344,7 +355,7 @@ namespace GA
                     if (org.numberOfdecptives == deceptiveLocations.Count && org.fitness == (GENES - totalDecptiveBits))
                     {
                         ideal = true;
-                        printOrg(org);
+                        //printOrg(org);
                     }
                 }
                 else if (!deceptiveLandscape && org.fitness >= GENES)
@@ -375,8 +386,8 @@ namespace GA
                 {
                     org.numberOfdecptives++;
                     numWithDecptive++;
-                    //Console.WriteLine(" Decptive found !!");
-                    //printOrg(org);
+                    
+                    
                 }
             }
         }

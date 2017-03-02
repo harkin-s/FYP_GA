@@ -37,7 +37,7 @@ namespace GA
         public static int deceptiveReward = 300;
         private static int gnumOfDec = 0;
         public static bool deceptiveLandscape = false;
-        public static bool usePehnotype = false;
+        public static bool usePehnotype = true;
         private static bool varyDecptivePosition = false;
         private static bool varyAlleles = false;
         private static bool weightedCrossover = false;
@@ -144,7 +144,8 @@ namespace GA
                     numWithDecptive = 0;
                     getNextGen();
                     count++;
-                    if(count >= 100)
+                    //Console.WriteLine("Best Score --> "+bestGlobalScore);
+                    if (count >= 100)
                     {
                         ideal = true;
                         //Console.WriteLine("No optimal has been found after 100 genertaions");
@@ -161,6 +162,7 @@ namespace GA
         //Populates the array with random 1's and 0's
         public static void populate()
         {
+            GENERATION.Clear();
             for (int x = 0; x < POPULATION; x++)
             {
                 GENERATION.Add(new Organism(GENES));
@@ -195,7 +197,7 @@ namespace GA
                 // This will select four at random and choose the best to into next generation. 
                 for (var a = 0; a < compSize; a++)
                 {
-                    var sel = GetRandomNumber(0, 100);
+                    var sel = GetRandomNumber(0, POPULATION);
                     score = 0;
 
                     if (deceptiveLandscape)
@@ -218,6 +220,7 @@ namespace GA
                 tempGen.Add(GENERATION[bestPerformer]);
                 
             }
+            checkForIdeal(GENERATION);
             GENERATION = generateNextGen(tempGen);
         }
 
@@ -274,7 +277,7 @@ namespace GA
                 for (var b = 0; b < crossPoitns.Count; b++)
                 {
                     endPoint = b+1 < crossPoitns.Count  ? crossPoitns[b + 1] : GENES;
-                    var random = GetRandomNumber(0, 400);  //Random mutation factor 0.025% chance 
+                    var random = GetRandomNumber(0, 40);  //Random mutation factor 0.025% chance 
                     
                     if (parent == 0)     // Number is even
                     {

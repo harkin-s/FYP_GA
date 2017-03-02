@@ -12,6 +12,10 @@ using System.Threading.Tasks;
          add config 
          run multiplie times to gain accurate results
          make output to text file 
+
+    01/03/2017  - Should get similar results as before may be hamming distance causing error review all of the code.
+                  Store data form all runs not just average and plot to show convergence.
+                  Also add elitiesm to select the best candiated from each genetartion to go through without competiton
 */
 namespace GA
 {
@@ -23,8 +27,8 @@ namespace GA
         public static List<int> deceptiveLocations = new List<int>();
         private static int numOfCrossPoints = 1;        //Determines how many cross points the cross over algoithm will have
         public static int bestGlobalScore = 0;
-        public static List<int> alleleSizes = new List<int>();    //Must evenley divide 
-        public static int fitnessWeight = 1;
+        public static List<int> alleleSizes = new List<int>();    
+        public static int fitnessWeight = 2;
         public static int phenotypicWeight = 1;
         private static int totalDecptiveBits = 0;
         public static readonly int POPULATION = 100;
@@ -33,7 +37,7 @@ namespace GA
         public static int deceptiveReward = 300;
         private static int gnumOfDec = 0;
         public static bool deceptiveLandscape = false;
-        public static bool usePehnotype = true;
+        public static bool usePehnotype = false;
         private static bool varyDecptivePosition = false;
         private static bool varyAlleles = false;
         private static bool weightedCrossover = false;
@@ -42,7 +46,7 @@ namespace GA
 
 
         // Main method call the generate population method and all proccedding methods
-        public static int[] runGA(int iterations)
+        public static List<int> runGA(int iterations)
         {
 
             //Set up for varying allelies can only contain 3 or 5 .can only contain 3 x 5 alleles and 5 x 3 .Num of alleles will be eight
@@ -129,7 +133,7 @@ namespace GA
             }
 
 
-            int[] results = new int[iterations];
+            List<int> results = new List<int>();
             for (var runs = 0; runs < iterations; ++runs)
             {
                 populate();
@@ -147,8 +151,8 @@ namespace GA
                     }
                     //Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
                 }
-               // Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
-                results[runs] = count;
+               //Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
+                results.Add(count);
                 ideal = false;
             }
             return results;
@@ -193,13 +197,16 @@ namespace GA
                 {
                     var sel = GetRandomNumber(0, 100);
                     score = 0;
+
+                    if (deceptiveLandscape)
+                        checkDecptives(GENERATION[sel]);
+
                     for (var c = 0; c < GENES; c++)
                     {
                         score = score + GENERATION[sel].genes[c];
                     }
                     GENERATION[sel].fitness = score;
-                    if(deceptiveLandscape)
-                        checkDecptives(GENERATION[sel]);
+                    score += (GENERATION[sel].numberOfdecptives * deceptiveReward);
 
                     if (score > bestScore)
                     {
@@ -267,7 +274,7 @@ namespace GA
                 for (var b = 0; b < crossPoitns.Count; b++)
                 {
                     endPoint = b+1 < crossPoitns.Count  ? crossPoitns[b + 1] : GENES;
-                    var random = GetRandomNumber(0, 4000);  //Random mutation factor 0.025% chance 
+                    var random = GetRandomNumber(0, 400);  //Random mutation factor 0.025% chance 
                     
                     if (parent == 0)     // Number is even
                     {
@@ -294,7 +301,7 @@ namespace GA
                         {
                             nextGen[pop].genes[randG] = 0;
                         }
-                       // Console.WriteLine("Mutate");
+                      //  Console.WriteLine("Mutate");
                     }
 
                    
@@ -325,7 +332,7 @@ namespace GA
                 diff = getHammingDistance(orgA, orgB);
                 // Gets the score for each partner will select one with the highest score for crossover.
                 // Score is a sum of the fitness of the organism plus any deceptives the orgainims has and its phenotypic difference from the the select organism
-                score = ((fitnessWeight * gen[sel].fitness) + (gen[sel].numberOfdecptives * deceptiveReward )) + (phenotypicWeight * diff);
+                score = ((fitnessWeight * orgB.fitness) + (orgB.numberOfdecptives * deceptiveReward )) + (phenotypicWeight * diff);
                 if (score > bestScore)
                 {
                     bestScore = score;

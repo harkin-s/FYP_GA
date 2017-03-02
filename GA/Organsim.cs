@@ -25,6 +25,7 @@ namespace GA
             for(var i = from  ; i < to; i++)
             {
                 selGenes.Add(genes[i]);
+                //Console.WriteLine(i);
             }
 
             return selGenes;

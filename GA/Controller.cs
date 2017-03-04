@@ -16,10 +16,15 @@ namespace GA
             List<String> results = new List<String>();
             List<int> allResults = new List<int>();
             results.Add("Average,Best,Worst");
+            var par = "";
             for (var a = 0; a < runTime; a++)
             {
+                var res = new Tuple<List<int>, string>(ans, "");
+                res = GeneticAlgorithm.runGA(runSize);
+                ans = res.Item1;
+                par = res.Item2;
                 
-                ans = GeneticAlgorithm.runGA(runSize);
+                
                 allResults.AddRange(ans);
                 if (ans.Sum() == 0)
                 {
@@ -28,6 +33,7 @@ namespace GA
                 Console.WriteLine("The Average of the Results are: " + ans.Average() + " At run: " + a);
                 results.Add(ans.Average().ToString() + "," + ans.Min() + "," + ans.Max());
             }
+            results.Add(par);
             outputRunResults(allResults);
 
 

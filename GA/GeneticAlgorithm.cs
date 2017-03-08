@@ -159,8 +159,8 @@ namespace GA
                 results.GenerationsTaken.Add(count);
             }
             results.Parameters = "Number Of Cross Points:" + numOfCrossPoints + ",Fitness weight:" + fitnessWeight + ",Phenotypic weight: " + phenotypicWeight +
-                ",Population Size: " + POPULATION + ",Number of Genes: " + GENES + ",Deceptive Lanscape" + deceptiveLandscape + ",Phenotypic matching: " + usePehnotype +
-                ",Vary decptive position: " + multipleDeceptives + ",Vary Allele sizes: " + varyAlleles + ",Weighted crossover: " + weightedCrossover + ",Elitism: " + elitism +
+                ",Population Size: " + POPULATION + ",Number of Genes: " + GENES + ",Deceptive Lanscape: " + deceptiveLandscape + ",Phenotypic matching: " + usePehnotype +
+                ",Use Hamming: " + useHamming + ",Vary decptive position: " + multipleDeceptives + ",Vary Allele sizes: " + varyAlleles + ",Weighted crossover: " + weightedCrossover + ",Elitism: " + elitism +
                 ",Number of deceptive lanscapes: " + numberOfDecptiveLandscape;
             results.numOfDecptiveBits = totalDecptiveBits;
             return results;

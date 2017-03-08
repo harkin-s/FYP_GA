@@ -10,14 +10,16 @@ namespace GA
     public class Organism
     {
         public int fitness { get; set; }
-        public String phenotype { get; set; }
+        public List<int> phenotype { get; set; }
         public int[] genes { get; set; }
         public int numberOfdecptives { get; set; }
 
         public Organism(int Genes)
         {
             genes = new int[Genes];
+            phenotype = new List<int>();
         }
+
 
         public List<int> spliceGenes(int from, int to)
         {

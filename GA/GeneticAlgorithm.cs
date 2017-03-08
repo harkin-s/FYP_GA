@@ -35,8 +35,9 @@ namespace GA
         public static readonly int GENES = 30;
         public static int ALLELES = 0;      //set to 8 as need 
         public static int deceptiveReward = 30;
-        public static bool deceptiveLandscape = false;
-        public static bool usePehnotype = false;
+        public static bool deceptiveLandscape = true;
+        public static bool usePehnotype = true;
+        public static bool useHamming = false;
         private static bool multipleDeceptives = false;
         private static bool varyAlleles = false;
         private static bool weightedCrossover = false;
@@ -201,14 +202,19 @@ namespace GA
                 var bestScore = 0;
                 bestPerformer = 0;
 
+                if (deceptiveLandscape)
+                    checkDecptives(GENERATION[all]);
+
+                if (usePehnotype)
+                    getPheno(GENERATION[all]);
+
                 // This will select four at random and choose the best to into next generation. 
                 for (var a = 0; a < compSize; a++)
                 {
                     var sel = GetRandomNumber(0, POPULATION);
                     score = 0;
 
-                    if (deceptiveLandscape)
-                        checkDecptives(GENERATION[sel]);
+                   
 
                     for (var c = 0; c < GENES; c++)
                     {
@@ -337,8 +343,11 @@ namespace GA
                 var rand = GetRandomNumber(0, POPULATION);
                 Organism orgA = gen[sel];
                 Organism orgB = gen[rand];
-                if(usePehnotype)
-                diff = getHammingDistance(orgA, orgB);
+                if(useHamming)
+                    diff += getHammingDistance(orgA, orgB);
+
+                if (usePehnotype)
+                    diff += getPhenoDifference(orgA, orgB);
                 // Gets the score for each partner will select one with the highest score for crossover.
                 // Score is a sum of the fitness of the organism plus any deceptives the orgainims has and its phenotypic difference from the the select organism
                 score = ((fitnessWeight * orgB.fitness) + (orgB.numberOfdecptives * deceptiveReward )) + (phenotypicWeight * diff);
@@ -365,6 +374,50 @@ namespace GA
             }
             return score;
         }
+
+        public static int getPhenoDifference(Organism orgA, Organism orgB)
+        {
+            var score = 0;
+            for (var a = 0; a < ALLELES; a++)
+            {
+                var diff = 0;
+                diff = Math.Abs(orgA.phenotype[a] - orgB.phenotype[a]);
+                score += diff;
+               
+            }
+            return score/(ALLELES / 3 );    // Too normailise 3 semes to give best performance
+        }
+
+        public static void getPheno(Organism org)
+        {
+            org.phenotype.Clear();
+            var currStartCut = 0;
+            var endCut = 0;
+
+            for (var index = 0; index < ALLELES; index++)
+            {
+                List<int> gene = new List<int>();
+                endCut = index > 0 ? alleleSizes[index] + endCut : alleleSizes[index];
+                gene = org.spliceGenes(currStartCut, endCut);
+                currStartCut += alleleSizes[index];
+                var key = ListToString(gene);
+                var val = Convert.ToInt32(key, 2);
+
+                if ((deceptiveLandscape) && (deceptiveLocations.Contains(index)) )
+                {
+                    if (key == "000")
+                        val = 7;
+                    if (key == "00000")
+                        val = 31;
+                }
+
+                val++;                              //Ensure starts at 1
+                org.phenotype.Add(val);
+            }
+
+            
+        }
+
         public static Organism mutate(Organism org)
         {
             for(var g = 0; g < org.genes.Length; g++) {

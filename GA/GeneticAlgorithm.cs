@@ -26,7 +26,7 @@ namespace GA
         public static int perfectGen = 0;
         public static List<int> deceptiveLocations = new List<int>();
         private static int numOfCrossPoints = 1;        //Determines how many cross points the cross over algoithm will have
-        public static int bestGlobalScore = 0;
+        public static int generationBestPerformer = 0;
         public static List<int> alleleSizes = new List<int>();    
         public static int fitnessWeight = 1;
         public static int phenotypicWeight = 1;
@@ -35,21 +35,21 @@ namespace GA
         public static readonly int GENES = 30;
         public static int ALLELES = 0;      //set to 8 as need 
         public static int deceptiveReward = 30;
-        public static bool deceptiveLandscape = true;
+        public static bool deceptiveLandscape = false;
         public static bool usePehnotype = false;
-        private static bool multipleDeceptives = true;
-        private static bool varyAlleles = true;
+        private static bool multipleDeceptives = false;
+        private static bool varyAlleles = false;
         private static bool weightedCrossover = false;
         private static bool elitism = false;
         private static int numWithDecptive = 0;
-        private static int numberOfDecptiveLandscape = 3;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true
+        private static int numberOfDecptiveLandscape = 0;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
         public static List<Organism> GENERATION = new List<Organism>();
+        
 
 
         // Main method call the generate population method and all proccedding methods
-        public static Tuple<List<int>,String> runGA(int iterations)
+        public static Results runGA(int iterations)
         {
-
             //Set up for varying allelies can only contain 3 or 5 .can only contain 3 x 5 alleles and 5 x 3 .Num of alleles will be eight
             if (varyAlleles)
             {
@@ -131,18 +131,20 @@ namespace GA
                    totalDecptiveBits += alleleSizes[n];   
             }
 
-
-            List<int> results = new List<int>();
+            Results results = new Results();
             for (var runs = 0; runs < iterations; ++runs)
             {
                 populate();
                 var count = 0;
+                
                 while (!ideal)
                 {
                    // Console.WriteLine("Num of Org with deceptive: " + numWithDecptive + " At gen: " +count);
                     numWithDecptive = 0;
                     getNextGen();
                     count++;
+                    results.GenerationBestPerformer.Add(generationBestPerformer.ToString() + "," + count);
+                    generationBestPerformer = 0;
                     //Console.WriteLine("Best Score --> "+bestGlobalScore);
                     if (count >= 100)
                     {
@@ -151,15 +153,17 @@ namespace GA
                     }
                     //Console.WriteLine("AT --->" +count + "<---- GENERATIONS" + "Best Score is -->" + bestGlobalScore);
                 }
-               //Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
-                results.Add(count);
+                //Console.WriteLine("IT TOOK --->" + count + "<---- GENERATIONS");
                 ideal = false;
+                results.GenerationsTaken.Add(count);
             }
-            String parameters = "Number Of Cross Points:" + numOfCrossPoints + ",Fitness weight:" + fitnessWeight + ",Phenotypic weight: " + phenotypicWeight +
+            results.Parameters = "Number Of Cross Points:" + numOfCrossPoints + ",Fitness weight:" + fitnessWeight + ",Phenotypic weight: " + phenotypicWeight +
                 ",Population Size: " + POPULATION + ",Number of Genes: " + GENES + ",Deceptive Lanscape" + deceptiveLandscape + ",Phenotypic matching: " + usePehnotype +
                 ",Vary decptive position: " + multipleDeceptives + ",Vary Allele sizes: " + varyAlleles + ",Weighted crossover: " + weightedCrossover + ",Elitism: " + elitism +
                 ",Number of deceptive lanscapes: " + numberOfDecptiveLandscape;
-            return Tuple.Create(results, parameters);
+            results.numOfDecptiveBits = totalDecptiveBits;
+            return results;
+            
         }
 
         //Populates the array with random 1's and 0's
@@ -211,6 +215,7 @@ namespace GA
                         score = score + GENERATION[sel].genes[c];
                     }
                     GENERATION[sel].fitness = score;
+                    
                     score += (GENERATION[sel].numberOfdecptives * deceptiveReward);
 
                     if (score > bestScore)
@@ -218,11 +223,13 @@ namespace GA
                         bestScore = score;
                         bestPerformer = sel;
                     }
-                    bestGlobalScore = bestGlobalScore < bestScore ? bestScore : bestGlobalScore;
+                    
                 }
+                generationBestPerformer = generationBestPerformer < bestScore ? bestScore : generationBestPerformer;
                 tempGen.Add(GENERATION[bestPerformer]);
                 
             }
+
             checkForIdeal(GENERATION);
             GENERATION = generateNextGen(tempGen);
         }
@@ -381,6 +388,7 @@ namespace GA
         }
         public static void checkForIdeal(List<Organism> gen)
         {
+            
             foreach(Organism org in gen)
             {
                 var fitness = from g in org.genes
@@ -388,6 +396,7 @@ namespace GA
                               select g;
 
                 org.fitness = fitness.Sum();
+
                 if (deceptiveLandscape)
                 {
                     /*
@@ -401,6 +410,7 @@ namespace GA
                     if (org.numberOfdecptives == deceptiveLocations.Count && org.fitness == (GENES - totalDecptiveBits))
                     {
                         ideal = true;
+
                         //printOrg(org);
                     }
                 }
@@ -442,10 +452,10 @@ namespace GA
 
         //Add check if deceptive landscapes in Organism
      
-
-
         //Utiltiy Functions 
 
+
+      
 
         public static void copyPopulation(int[,] from)
         {

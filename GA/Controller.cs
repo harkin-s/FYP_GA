@@ -28,7 +28,7 @@ namespace GA
                 par = resGA.Parameters;
                 if (a < 1)
                 {
-                    allGenerationBests.AddRange(resGA.GenerationBestPerformer);
+                    allGenerationBests.AddRange(resGA.GenerationResults);
                     deceptivesInRun.Add(resGA.numOfDecptiveBits);
 
                 }

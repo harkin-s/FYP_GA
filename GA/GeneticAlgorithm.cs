@@ -32,25 +32,34 @@ namespace GA
         public static int phenotypicWeight = 1;
         private static int totalDecptiveBits = 0;
         public static readonly int POPULATION = 100;
-        public static readonly int GENES = 30;
+        public static int GENES = 30;
         public static int ALLELES = 0;      //set to 8 as need 
         public static int deceptiveReward = 30;
         public static bool deceptiveLandscape = true;
-        public static bool usePehnotype = true;
+        public static bool usePehnotype = false;
         public static bool useHamming = false;
         private static bool multipleDeceptives = false;
         private static bool varyAlleles = false;
         private static bool weightedCrossover = false;
-        private static bool elitism = false;
+        private static bool useEpistasis = false;
+        private static bool elitism = true;
+        private static bool uniformCrossover = true;
         private static int numWithDecptive = 0;
-        private static int numberOfDecptiveLandscape = 0;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
+        private static int numberOfDecptiveLandscape = 5;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
         public static List<Organism> GENERATION = new List<Organism>();
+        public static List<int> cutLocations = new List<int>();
+        public static List<int> genesToChange = new List<int>();
         
 
 
         // Main method call the generate population method and all proccedding methods
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public static Results runGA(int iterations)
         {
+            GENES = 30;
             //Set up for varying allelies can only contain 3 or 5 .can only contain 3 x 5 alleles and 5 x 3 .Num of alleles will be eight
             if (varyAlleles)
             {
@@ -59,6 +68,7 @@ namespace GA
                 List<int> posOf5s = new List<int>();
                 posOf5s.Clear();
 
+                // Randomize positions of 5 size alleles
                 while (posOf5s.Count != 3)
                 {
                     var posOf5 = GetRandomNumber(0, 7);
@@ -95,6 +105,16 @@ namespace GA
                     alleleSizes.Add(3);
                 }
             }
+           
+            if (useEpistasis)
+            {
+                GENES -= ALLELES / 2;
+            }
+            else
+            {
+                GENES = 30;
+            }
+
 
 
             //Deceptive locations set at random 
@@ -144,7 +164,11 @@ namespace GA
                     numWithDecptive = 0;
                     getNextGen();
                     count++;
-                    results.GenerationBestPerformer.Add(generationBestPerformer.ToString() + "," + count);
+                    var fitness = from org in GENERATION
+                                  where org.fitness > 0
+                                  select org.fitness;
+
+                    results.GenerationResults.Add(fitness.Average() + "," + fitness.Max() + "," + fitness.Min());
                     generationBestPerformer = 0;
                     //Console.WriteLine("Best Score --> "+bestGlobalScore);
                     if (count >= 100)
@@ -161,7 +185,7 @@ namespace GA
             results.Parameters = "Number Of Cross Points:" + numOfCrossPoints + ",Fitness weight:" + fitnessWeight + ",Phenotypic weight: " + phenotypicWeight +
                 ",Population Size: " + POPULATION + ",Number of Genes: " + GENES + ",Deceptive Lanscape: " + deceptiveLandscape + ",Phenotypic matching: " + usePehnotype +
                 ",Use Hamming: " + useHamming + ",Vary decptive position: " + multipleDeceptives + ",Vary Allele sizes: " + varyAlleles + ",Weighted crossover: " + weightedCrossover + ",Elitism: " + elitism +
-                ",Number of deceptive lanscapes: " + numberOfDecptiveLandscape;
+                ",Number of deceptive lanscapes: " + numberOfDecptiveLandscape + ",Epistasis: " + useEpistasis;
             results.numOfDecptiveBits = totalDecptiveBits;
             return results;
             
@@ -214,11 +238,35 @@ namespace GA
                     var sel = GetRandomNumber(0, POPULATION);
                     score = 0;
 
-                   
 
-                    for (var c = 0; c < GENES; c++)
+                    if (useEpistasis)
                     {
-                        score = score + GENERATION[sel].genes[c];
+                        for (var c = 0; c < GENES; c++)
+                        {
+                            score = score + GENERATION[sel].genes[c];
+                        }
+                    }
+                    else
+                    {
+                        var currStartCut = 0;
+                        var endCut = 0;
+                        for (var index = 0; index < ALLELES; index++)
+                        {
+                            List<int> gene = new List<int>();
+                            if (index > 0)
+                            {
+                                currStartCut = (index % 2 != 0) ? endCut - 1 : endCut;
+                                endCut = currStartCut + alleleSizes[index];
+
+                            }
+                            else
+                            {
+                                endCut = alleleSizes[index];
+                            }
+
+                            gene = GENERATION[sel].spliceGenes(currStartCut, endCut);
+                            score += gene.Sum();
+                        }
                     }
                     GENERATION[sel].fitness = score;
                     
@@ -251,7 +299,7 @@ namespace GA
                 Organism elite = new Organism(GENES);
                 foreach (Organism org in gen)
                 {
-                    if(org.fitness+org.numberOfdecptives > elite.fitness + elite.numberOfdecptives)
+                    if (org.fitness + org.numberOfdecptives > elite.fitness + elite.numberOfdecptives)
                     {
                         elite = org;
                     }
@@ -261,8 +309,8 @@ namespace GA
 
             //Cross over first 
 
-            
-            for (var pop = nextGen.Count ; pop < POPULATION; pop++)
+
+            for (var pop = nextGen.Count; pop < POPULATION; pop++)
             {
                 // Get best partner for organism 
                 var parentB = getPartner(gen, pop);
@@ -270,7 +318,7 @@ namespace GA
 
                 if (!weightedCrossover)
                 {
-                    while (crossPoitns.Count != numOfCrossPoints)
+                    while (crossPoitns.Count < numOfCrossPoints)
                     {
                         var point = GetRandomNumber(0, GENES);
                         if (!crossPoitns.Contains(point))
@@ -300,30 +348,56 @@ namespace GA
                 // Add ability for multiple cross over.
                 // Should cross points change for each cross over or stay the same for each generation 
 
+
                 var endPoint = 0;
                 var parent = 0;
-                for (var b = 0; b < crossPoitns.Count; b++)
+                if (!uniformCrossover)
                 {
-                    endPoint = b+1 < crossPoitns.Count  ? crossPoitns[b + 1] : GENES;  
-                    if (parent == 0)     // Number is even
+                    for (var b = 0; b < crossPoitns.Count; b++)
                     {
-                        gene = gen[pop].spliceGenes(crossPoitns[b], endPoint);
-                        nextGen[pop].addGenes(gene, crossPoitns[b], endPoint);
-                        parent = 1;
-                      
-                    }
-                    else if (parent == 1)
-                    {
-                        gene = gen[parentB].spliceGenes(crossPoitns[b], endPoint);
-                        nextGen[pop].addGenes(gene, crossPoitns[b], endPoint);
-                        parent = 0; 
-                    }
+                        endPoint = b + 1 < crossPoitns.Count ? crossPoitns[b + 1] : GENES;
+                        if (parent == 0)     // Number is even
+                        {
+                            gene = gen[pop].spliceGenes(crossPoitns[b], endPoint);
+                            nextGen[pop].addGenes(gene, crossPoitns[b], endPoint);
+                            parent = 1;
 
+                        }
+                        else if (parent == 1)
+                        {
+                            gene = gen[parentB].spliceGenes(crossPoitns[b], endPoint);
+                            nextGen[pop].addGenes(gene, crossPoitns[b], endPoint);
+                            parent = 0;
+                        }
+
+                    }
                     nextGen[pop] = mutate(nextGen[pop]);
+                    crossPoitns.Clear();
                 }
-                crossPoitns.Clear();
-                //Console.WriteLine("At Population: "+ pop);
+                else if(uniformCrossover)
+                {
+                    var rand = GetRandomNumber(0, 10);
+                    //nextGen[pop].genes = gen[pop].genes;
+                    for (var g = 0; g < GENES; g++)
+                    {
+                        if(rand < 5)
+                        {
+                            nextGen[pop].genes.SetValue(gen[pop].genes[g], g);
+                        }
+                        else
+                        {
+                            nextGen[pop].genes.SetValue(gen[parentB].genes[g], g);
+                        }
+                       // if (genesToChange[g] == 1)
+                       //     nextGen[pop].genes.SetValue(gen[parentB].genes[g], g);
+
+                    }
+                    nextGen[pop] = mutate(nextGen[pop]);
+                    crossPoitns.Clear();
+                }
+
             }
+        
 
             checkForIdeal(nextGen);
             return nextGen;
@@ -358,6 +432,9 @@ namespace GA
                 }
             }
 
+            if(uniformCrossover)
+                getDifferenceProfile(gen[sel] , gen[bestPartner]);
+            
             return bestPartner;
         }
 
@@ -387,20 +464,44 @@ namespace GA
             }
             return score/(ALLELES / 3 );    // Too normailise 3 semes to give best performance
         }
+        //Gets the differen in two organisms
+        public static void getDifferenceProfile(Organism orgA, Organism orgB)
+        {
+            genesToChange.Clear();
+            for (var a = 0; a < GENES; a++)
+            {
+                var val = orgA.genes[a] < orgB.genes[a] ? 1 : 0 ;
+                genesToChange.Add(val);
+
+            }
+        }
 
         public static void getPheno(Organism org)
         {
             org.phenotype.Clear();
             var currStartCut = 0;
             var endCut = 0;
-
-            for (var index = 0; index < ALLELES; index++)
+            
+            for(var index = 0; index < ALLELES; index++)
             {
+                var epiAdd = useEpistasis ? 1 : 0;
+           
                 List<int> gene = new List<int>();
-                endCut = index > 0 ? alleleSizes[index] + endCut : alleleSizes[index];
-                gene = org.spliceGenes(currStartCut, endCut);
-                currStartCut += alleleSizes[index];
+                if (index > 0) {
+
+                    currStartCut = (index % 2 != 0) ? endCut -epiAdd : endCut;
+                    endCut = currStartCut + alleleSizes[index];
+                    
+                }
+                else
+                {
+                    endCut = alleleSizes[index];
+                }
+                
+                 gene = org.spliceGenes(currStartCut, endCut);
+                
                 var key = ListToString(gene);
+              
                 var val = Convert.ToInt32(key, 2);
 
                 if ((deceptiveLandscape) && (deceptiveLocations.Contains(index)) )
@@ -413,6 +514,7 @@ namespace GA
 
                 val++;                              //Ensure starts at 1
                 org.phenotype.Add(val);
+                key = "";
             }
 
             
@@ -441,6 +543,7 @@ namespace GA
         }
         public static void checkForIdeal(List<Organism> gen)
         {
+
             
             foreach(Organism org in gen)
             {
@@ -480,26 +583,40 @@ namespace GA
             var currStartCut = 0;
             var endCut = 0;
             
-            for(var x = 0; x<ALLELES; x++)
+            for(var index = 0; index < ALLELES; index++)
             {
+                var epiAdd = useEpistasis ? 1 : 0; 
+                
                 List<int> gene = new List<int>();
-                endCut = x > 0 ? alleleSizes[x] + endCut : alleleSizes[x];
+                if (index > 0)
+                {
+
+                    currStartCut = (index % 2 != 0) ? endCut - epiAdd : endCut;
+                    endCut = currStartCut + alleleSizes[index];
+
+                }
+                else
+                {
+                    endCut = alleleSizes[index];
+                }
+
                 gene = org.spliceGenes(currStartCut, endCut);
-                currStartCut += alleleSizes[x];
+                
 
                 var val = ListToString(gene);
-                if (deceptiveLocations.Contains(x) && val.Contains("000") && alleleSizes[x] == 3)
+                if (deceptiveLocations.Contains(index) && val.Contains("000") && alleleSizes[index] == 3)
                 {
                     org.numberOfdecptives++;
                     numWithDecptive++;
                      
                 }
                 
-                else if (deceptiveLocations.Contains(x) && alleleSizes[x] ==5 && val.Contains("00000"))         //Set to 2 for now as deceptive landscape is a three zeros need to change later!
+                else if (deceptiveLocations.Contains(index) && alleleSizes[index] ==5 && val.Contains("00000"))         //Set to 2 for now as deceptive landscape is a three zeros need to change later!
                 {
                     org.numberOfdecptives++;
                     numWithDecptive++;
                 }
+                
             }
         }
 

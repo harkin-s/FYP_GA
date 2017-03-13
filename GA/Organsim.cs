@@ -23,12 +23,13 @@ namespace GA
 
         public List<int> spliceGenes(int from, int to)
         {
-            List<int> selGenes = new List<int>();
-            for(var i = from  ; i < to; i++)
-            {
-                selGenes.Add(genes[i]);
-                //Console.WriteLine(i);
-            }
+          List<int> selGenes = new List<int>();
+                  
+          for (var i = from; i < to; i++)
+          {
+             selGenes.Add(genes[i]);
+          }
+           
 
             return selGenes;
         }

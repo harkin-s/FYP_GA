@@ -35,17 +35,17 @@ namespace GA
         public static int GENES = 30;
         public static int ALLELES = 0;      //set to 8 as need 
         public static int deceptiveReward = 30;
-        public static bool deceptiveLandscape = true;
-        public static bool usePehnotype = false;
+        public static bool deceptiveLandscape = false;
+        public static bool usePehnotype = true;
         public static bool useHamming = false;
         private static bool multipleDeceptives = false;
-        private static bool varyAlleles = false;
+        private static bool varyAlleles = true;
         private static bool weightedCrossover = false;
         private static bool useEpistasis = false;
         private static bool elitism = true;
-        private static bool uniformCrossover = true;
+        private static bool uniformCrossover = false;
         private static int numWithDecptive = 0;
-        private static int numberOfDecptiveLandscape = 5;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
+        private static int numberOfDecptiveLandscape = 0;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
         public static List<Organism> GENERATION = new List<Organism>();
         public static List<int> cutLocations = new List<int>();
         public static List<int> genesToChange = new List<int>();
@@ -409,11 +409,11 @@ namespace GA
             var testSize = 4;
             var bestPartner = 0;
             
-            var bestScore = 0;
+            float bestScore = 0;
             for (var a = 0; a <= testSize; a++)
             {
-                var diff = 0;
-                var score = 0;
+                float diff = 0;
+                float score = 0;
                 var rand = GetRandomNumber(0, POPULATION);
                 Organism orgA = gen[sel];
                 Organism orgB = gen[rand];
@@ -452,17 +452,18 @@ namespace GA
             return score;
         }
 
-        public static int getPhenoDifference(Organism orgA, Organism orgB)
+        public static float getPhenoDifference(Organism orgA, Organism orgB)
         {
-            var score = 0;
+            float score = 0;
             for (var a = 0; a < ALLELES; a++)
             {
-                var diff = 0;
+                float diff = 0;
                 diff = Math.Abs(orgA.phenotype[a] - orgB.phenotype[a]);
-                score += diff;
+                float div = alleleSizes[a] == 3 ? 3 : 5;
+                score += diff/div;
                
             }
-            return score/(ALLELES / 3 );    // Too normailise 3 semes to give best performance
+            return score;    // Too normailise 3 semes to give best performance
         }
         //Gets the differen in two organisms
         public static void getDifferenceProfile(Organism orgA, Organism orgB)
@@ -507,9 +508,9 @@ namespace GA
                 if ((deceptiveLandscape) && (deceptiveLocations.Contains(index)) )
                 {
                     if (key == "000")
-                        val = 7;
+                        val = 9;
                     if (key == "00000")
-                        val = 31;
+                        val = 33;
                 }
 
                 val++;                              //Ensure starts at 1

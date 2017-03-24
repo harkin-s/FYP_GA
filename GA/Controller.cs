@@ -8,21 +8,23 @@ namespace GA
 {
     class Controller
     {
+        public static String experiment = "Experiment.1.StandardLandscapes";
+        public static String runtype = "10DEC";
         public static void Main(String[] args)
         {
+
             var runSize = 100;
             var runTime = 100;
-            List<int> ans = new List<int>();
+            List<float> ans = new List<float>();
             List<String> results = new List<String>();
-            List<int> allResults = new List<int>();
-            List<int> numofDecptive = new List<int>();
+            List<float> allResults = new List<float>();
+            List<float> numofDecptive = new List<float>();
             List<String> allGenerationBests = new List<String>();
-            List<int> deceptivesInRun = new List<int>();
+            List<float> deceptivesInRun = new List<float>();
             results.Add("Average,Best,Worst");
             var par = "";
             for (var a = 0; a < runTime; a++)
             {
-                var res = new Tuple<List<int>, string>(ans, "");
                 Results resGA = GeneticAlgorithm.runGA(runSize);
                 ans = resGA.GenerationsTaken;
                 par = resGA.Parameters;
@@ -46,7 +48,7 @@ namespace GA
             outputGenerationBestResults(allGenerationBests);
 
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter(@"C:\Users\shark\Documents\FYP_Results\results_average_"+DateTime.Now.ToShortDateString()+".csv"))
+            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\" + experiment + "\\results_average_" + runtype +"_"+  DateTime.Now.ToShortDateString()+".csv"))
             {
                 foreach (String res in results)
                 {             
@@ -54,13 +56,14 @@ namespace GA
                 }
             }
 
-        
+            outputSummation(results, allResults, allGenerationBests);
         }
 
-        private static void outputRunResults(List<int> ans)
+        private static void outputRunResults(List<float> ans)
         {
+            
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter(@"C:\Users\shark\Documents\FYP_Results\results_all_" + DateTime.Now.ToShortDateString() + ".csv"))
+            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\" + experiment + "\\results_all_" + runtype + "_"+ DateTime.Now.ToShortDateString() + ".csv"))
             {
 
                 foreach (int a in ans)
@@ -72,7 +75,33 @@ namespace GA
         private static void outputGenerationBestResults(List<String> ans)
         {
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter(@"C:\Users\shark\Documents\FYP_Results\generationBest_" + DateTime.Now.ToShortDateString() + ".csv"))
+            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\" + experiment + "\\generationBest_" + runtype + "_" + DateTime.Now.ToShortDateString() + ".csv"))
+            {
+
+                foreach (String a in ans)
+                {
+                    file.WriteLine(a);
+                }
+            }
+        }
+
+        private static void outputSummation(List<String> avg , List<float> allRuns, List<String> genBest)
+        {
+
+            List<String> ans = new List<String>();
+
+            var fails = from f in allRuns
+                        where f >= 100
+                        select f;
+
+            float failRate = (float)( fails.Count() / (float)allRuns.Count()) * 100;
+
+            ans.Add("Fail Rate" + "," + failRate.ToString());
+
+            ans.Add("Average All " + "," + allRuns.Average());
+
+            using (System.IO.StreamWriter file =
+            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\"+experiment+ "\\summary_" + runtype + "_"+ DateTime.Now.ToShortDateString() + ".csv"))
             {
 
                 foreach (String a in ans)

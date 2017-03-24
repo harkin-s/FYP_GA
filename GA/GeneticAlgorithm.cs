@@ -35,21 +35,23 @@ namespace GA
         public static int GENES = 30;
         public static int ALLELES = 0;      //set to 8 as need 
         public static int deceptiveReward = 30;
-        public static bool deceptiveLandscape = false;
-        public static bool usePehnotype = true;
+        public static bool deceptiveLandscape = true;
+        public static bool usePehnotype = false;
         public static bool useHamming = false;
-        private static bool multipleDeceptives = false;
-        private static bool varyAlleles = true;
+        private static bool multipleDeceptives = true;
+        private static bool varyAlleles = false;
         private static bool weightedCrossover = false;
         private static bool useEpistasis = false;
         private static bool elitism = true;
         private static bool uniformCrossover = false;
         private static int numWithDecptive = 0;
-        private static int numberOfDecptiveLandscape = 0;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
+        private static int numberOfDecptiveLandscape = 10;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
         public static List<Organism> GENERATION = new List<Organism>();
         public static List<int> cutLocations = new List<int>();
         public static List<int> genesToChange = new List<int>();
-        
+        public static Results results = new Results();
+        public static int count = 0;
+        public static int peakFitness = 0;
 
 
         // Main method call the generate population method and all proccedding methods
@@ -127,7 +129,7 @@ namespace GA
                     numberOfDecptiveLandscape = numberOfDecptiveLandscape > 0 ? numberOfDecptiveLandscape: numOfDec;
                     while (deceptiveLocations.Count != numberOfDecptiveLandscape)
                     {
-                        var loc = GetRandomNumber(1, ALLELES);
+                        var loc = GetRandomNumber(0, ALLELES);
                         if (!deceptiveLocations.Contains(loc))
                         {
                             deceptiveLocations.Add(loc);
@@ -152,11 +154,15 @@ namespace GA
                    totalDecptiveBits += alleleSizes[n];   
             }
 
-            Results results = new Results();
+            //Peak Fitness
+            peakFitness = GENES - totalDecptiveBits;
+            results = new Results();
             for (var runs = 0; runs < iterations; ++runs)
             {
+                
+                GENERATION.Clear();
                 populate();
-                var count = 0;
+                count = 0;
                 
                 while (!ideal)
                 {
@@ -164,14 +170,10 @@ namespace GA
                     numWithDecptive = 0;
                     getNextGen();
                     count++;
-                    var fitness = from org in GENERATION
-                                  where org.fitness > 0
-                                  select org.fitness;
-
-                    results.GenerationResults.Add(fitness.Average() + "," + fitness.Max() + "," + fitness.Min());
+                    var max = useEpistasis ? 50 : 100;
                     generationBestPerformer = 0;
                     //Console.WriteLine("Best Score --> "+bestGlobalScore);
-                    if (count >= 100)
+                    if (count >= max)
                     {
                         ideal = true;
                         //Console.WriteLine("No optimal has been found after 100 genertaions");
@@ -188,6 +190,7 @@ namespace GA
                 ",Number of deceptive lanscapes: " + numberOfDecptiveLandscape + ",Epistasis: " + useEpistasis;
             results.numOfDecptiveBits = totalDecptiveBits;
             return results;
+
             
         }
 
@@ -211,6 +214,15 @@ namespace GA
         //Used to get the next generation 
         public static void getNextGen()
         {
+
+            
+            if (deceptiveLandscape)
+                checkDecptives();
+
+            getFitnessAll();
+
+            evaluateGeneration();
+
             //First evaluate the gen using tournoment selction 
             List<Organism> tempGen = new List<Organism>();
             tempGen.Clear();
@@ -226,9 +238,6 @@ namespace GA
                 var bestScore = 0;
                 bestPerformer = 0;
 
-                if (deceptiveLandscape)
-                    checkDecptives(GENERATION[all]);
-
                 if (usePehnotype)
                     getPheno(GENERATION[all]);
 
@@ -237,40 +246,7 @@ namespace GA
                 {
                     var sel = GetRandomNumber(0, POPULATION);
                     score = 0;
-
-
-                    if (useEpistasis)
-                    {
-                        for (var c = 0; c < GENES; c++)
-                        {
-                            score = score + GENERATION[sel].genes[c];
-                        }
-                    }
-                    else
-                    {
-                        var currStartCut = 0;
-                        var endCut = 0;
-                        for (var index = 0; index < ALLELES; index++)
-                        {
-                            List<int> gene = new List<int>();
-                            if (index > 0)
-                            {
-                                currStartCut = (index % 2 != 0) ? endCut - 1 : endCut;
-                                endCut = currStartCut + alleleSizes[index];
-
-                            }
-                            else
-                            {
-                                endCut = alleleSizes[index];
-                            }
-
-                            gene = GENERATION[sel].spliceGenes(currStartCut, endCut);
-                            score += gene.Sum();
-                        }
-                    }
-                    GENERATION[sel].fitness = score;
-                    
-                    score += (GENERATION[sel].numberOfdecptives * deceptiveReward);
+                    score = (GENERATION[sel].numberOfdecptives * deceptiveReward) + GENERATION[sel].fitness;
 
                     if (score > bestScore)
                     {
@@ -284,7 +260,9 @@ namespace GA
                 
             }
 
-            checkForIdeal(GENERATION);
+            if (!useEpistasis)
+                checkForIdeal(GENERATION);
+
             GENERATION = generateNextGen(tempGen);
         }
 
@@ -392,14 +370,16 @@ namespace GA
                        //     nextGen[pop].genes.SetValue(gen[parentB].genes[g], g);
 
                     }
+                    nextGen[pop].fitness = 0;
+                    nextGen[pop].numberOfdecptives = 0;
                     nextGen[pop] = mutate(nextGen[pop]);
                     crossPoitns.Clear();
                 }
 
             }
-        
+            if (!useEpistasis)
+                checkForIdeal(nextGen);
 
-            checkForIdeal(nextGen);
             return nextGen;
 
         }
@@ -548,22 +528,11 @@ namespace GA
             
             foreach(Organism org in gen)
             {
-                var fitness = from g in org.genes
-                              where g > 0
-                              select g;
 
-                org.fitness = fitness.Sum();
 
                 if (deceptiveLandscape)
                 {
-                    /*
-                    var ty = org.getGenes(deceptiveLocations[0]*3, deceptiveLocations[0]*3 + 3);
-                    foreach(int i in ty)
-                    {
-                        Console.WriteLine(i);
-                    }
-                    */
-                        
+                            
                     if (org.numberOfdecptives == deceptiveLocations.Count && org.fitness == (GENES - totalDecptiveBits))
                     {
                         ideal = true;
@@ -578,55 +547,103 @@ namespace GA
             }
         }
 
-        public static void checkDecptives(Organism org)
+        public static void checkDecptives()
         {
-            org.numberOfdecptives = 0;
-            var currStartCut = 0;
-            var endCut = 0;
-            
-            for(var index = 0; index < ALLELES; index++)
+            foreach (Organism org in GENERATION)
             {
-                var epiAdd = useEpistasis ? 1 : 0; 
-                
-                List<int> gene = new List<int>();
-                if (index > 0)
-                {
+                org.numberOfdecptives = 0;
+                var currStartCut = 0;
+                var endCut = 0;
 
-                    currStartCut = (index % 2 != 0) ? endCut - epiAdd : endCut;
-                    endCut = currStartCut + alleleSizes[index];
+                for (var index = 0; index < ALLELES; index++)
+                {
+                    var epiAdd = useEpistasis ? 1 : 0;
+
+                    List<int> gene = new List<int>();
+                    if (index > 0)
+                    {
+
+                        currStartCut = (index % 2 != 0) ? endCut - epiAdd : endCut;
+                        endCut = currStartCut + alleleSizes[index];
+
+                    }
+                    else
+                    {
+                        endCut = alleleSizes[index];
+                    }
+
+                    gene = org.spliceGenes(currStartCut, endCut);
+
+
+                    var val = ListToString(gene);
+                    if (deceptiveLocations.Contains(index) && val.Contains("000") && alleleSizes[index] == 3)
+                    {
+                        org.numberOfdecptives++;
+                        numWithDecptive++;
+
+                    }
+
+                    else if (deceptiveLocations.Contains(index) && alleleSizes[index] == 5 && val.Contains("00000"))         //Set to 2 for now as deceptive landscape is a three zeros need to change later!
+                    {
+                        org.numberOfdecptives++;
+                        numWithDecptive++;
+                    }
 
                 }
-                else
-                {
-                    endCut = alleleSizes[index];
-                }
-
-                gene = org.spliceGenes(currStartCut, endCut);
-                
-
-                var val = ListToString(gene);
-                if (deceptiveLocations.Contains(index) && val.Contains("000") && alleleSizes[index] == 3)
-                {
-                    org.numberOfdecptives++;
-                    numWithDecptive++;
-                     
-                }
-                
-                else if (deceptiveLocations.Contains(index) && alleleSizes[index] ==5 && val.Contains("00000"))         //Set to 2 for now as deceptive landscape is a three zeros need to change later!
-                {
-                    org.numberOfdecptives++;
-                    numWithDecptive++;
-                }
-                
             }
         }
 
+        public static void getFitnessAll()
+        {
+            foreach (Organism org in GENERATION)
+            {
+                org.fitness = 0; 
+                var score = 0;
+                if (!useEpistasis)
+                {
+                    score = org.genes.Sum();   
+                }
+                else
+                {
+                    var currStartCut = 0;
+                    var endCut = 0;
+                    for (var index = 0; index < ALLELES; index++)
+                    {
+                        List<int> gene = new List<int>();
+                        if (index > 0)
+                        {
+                            currStartCut = (index % 2 != 0) ? endCut - 1 : endCut;
+                            endCut = currStartCut + alleleSizes[index];
+
+                        }
+                        else
+                        {
+                            endCut = alleleSizes[index];
+                        }
+
+                        gene = org.spliceGenes(currStartCut, endCut);
+                        score += gene.Sum();
+                    }
+                }
+                org.fitness = score;
+            }
+        }
+
+        public static void evaluateGeneration()
+        {
+            var allFitness = from o in GENERATION
+                             select o.fitness;
+
+            results.GenerationResults.Add(((float) allFitness.Average()/(float)peakFitness).ToString() + "," + ((float)allFitness.Max() /(float) peakFitness).ToString() + "," + ((float)allFitness.Min()/(float)peakFitness).ToString() + "," + count);
+           
+        }
+
         //Add check if deceptive landscapes in Organism
-     
+
         //Utiltiy Functions 
 
 
-      
+
 
         public static void copyPopulation(int[,] from)
         {
@@ -649,6 +666,7 @@ namespace GA
             }
             return builder.ToString();
         }
+        
 
         public static void printOrg(Organism org)
         {

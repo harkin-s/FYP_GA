@@ -8,8 +8,8 @@ namespace GA
 {
     class Controller
     {
-        public static String experiment = "Experiment.1.StandardLandscapes";
-        public static String runtype = "10DEC";
+        public static String experiment = "Experimetn.5.UniformCross";
+        public static String runtype = "Uniform_8DEC_Pheno";
         public static void Main(String[] args)
         {
 

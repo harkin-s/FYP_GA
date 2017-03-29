@@ -42,6 +42,7 @@ namespace GA
                 }
                 Console.WriteLine("The Average of the Results are: " + ans.Average() + " At run: " + a);
                 results.Add(ans.Average() + "," + ans.Min() + "," + ans.Max());
+                ans.Clear();
             }
             results.Add(par);
             outputRunResults(allResults);

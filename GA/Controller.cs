@@ -8,8 +8,8 @@ namespace GA
 {
     class Controller
     {
-        public static String experiment = "Experimetn.5.UniformCross";
-        public static String runtype = "Uniform_8DEC_Pheno";
+        public static String experiment = "Uniform";
+        public static String runtype = "Uniform_7DEC_Pheno";
         public static void Main(String[] args)
         {
 
@@ -49,10 +49,10 @@ namespace GA
             outputGenerationBestResults(allGenerationBests);
 
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\" + experiment + "\\results_average_" + runtype +"_"+  DateTime.Now.ToShortDateString()+".csv"))
+            new System.IO.StreamWriter("\\FYP_Results\\" + experiment + "\\results_average_" + runtype + ".csv"))
             {
                 foreach (String res in results)
-                {             
+                {
                     file.WriteLine(res);
                 }
             }
@@ -62,9 +62,9 @@ namespace GA
 
         private static void outputRunResults(List<float> ans)
         {
-            
+
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\" + experiment + "\\results_all_" + runtype + "_"+ DateTime.Now.ToShortDateString() + ".csv"))
+            new System.IO.StreamWriter("\\FYP_Results\\" + experiment + "\\results_all_" + runtype + ".csv"))
             {
 
                 foreach (int a in ans)
@@ -76,7 +76,7 @@ namespace GA
         private static void outputGenerationBestResults(List<String> ans)
         {
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\" + experiment + "\\generationBest_" + runtype + "_" + DateTime.Now.ToShortDateString() + ".csv"))
+            new System.IO.StreamWriter("\\FYP_Results\\" + experiment + "\\generationBest_" + runtype + ".csv"))
             {
 
                 foreach (String a in ans)
@@ -86,7 +86,7 @@ namespace GA
             }
         }
 
-        private static void outputSummation(List<String> avg , List<float> allRuns, List<String> genBest)
+        private static void outputSummation(List<String> avg, List<float> allRuns, List<String> genBest)
         {
 
             List<String> ans = new List<String>();
@@ -95,14 +95,14 @@ namespace GA
                         where f >= 100
                         select f;
 
-            float failRate = (float)( fails.Count() / (float)allRuns.Count()) * 100;
+            float failRate = (float)(fails.Count() / (float)allRuns.Count()) * 100;
 
             ans.Add("Fail Rate" + "," + failRate.ToString());
 
             ans.Add("Average All " + "," + allRuns.Average());
 
             using (System.IO.StreamWriter file =
-            new System.IO.StreamWriter("C:\\Users\\shark\\Documents\\FYP_Results\\"+experiment+ "\\summary_" + runtype + "_"+ DateTime.Now.ToShortDateString() + ".csv"))
+            new System.IO.StreamWriter("\\FYP_Results\\" + experiment + "\\summary_" + runtype + ".csv"))
             {
 
                 foreach (String a in ans)
@@ -110,6 +110,7 @@ namespace GA
                     file.WriteLine(a);
                 }
             }
+
         }
     }
 }

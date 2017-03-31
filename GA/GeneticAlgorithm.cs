@@ -27,7 +27,7 @@ namespace GA
         public static List<int> deceptiveLocations = new List<int>();
         private static int numOfCrossPoints = 1;        //Determines how many cross points the cross over algoithm will have
         public static int generationBestPerformer = 0;
-        public static List<int> alleleSizes = new List<int>();    
+        public static List<int> alleleSizes = new List<int>();
         public static int fitnessWeight = 1;
         public static int phenotypicWeight = 1;
         private static int totalDecptiveBits = 0;
@@ -35,18 +35,18 @@ namespace GA
         public static int GENES = 30;
         public static int ALLELES = 0;      //set to 8 as need 
         public static int deceptiveReward = 30;
-        public static bool deceptiveLandscape = false;
+        public static bool deceptiveLandscape = true;
         public static bool usePehnotype = true;
         public static bool useHamming = false;
-        private static bool multipleDeceptives = false;
+        private static bool multipleDeceptives = true;
         private static bool varyAlleles = false;
         private static bool weightedCrossover = false;
         private static bool useEpistasis = false;
         private static bool elitism = true;
-        private static bool uniformCrossover = false; //Change uniform
+        private static bool uniformCrossover = true; //Change uniform
         private static bool halfUniformCrossover = false;
         private static int numWithDecptive = 0;
-        private static int numberOfDecptiveLandscape = 0;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
+        private static int numberOfDecptiveLandscape = 7;   // If set to zero will choose random amount of decptives will only work if multipleDeceptives is true otherwise will just add one a random position 
         public static List<Organism> GENERATION = new List<Organism>();
         public static List<int> cutLocations = new List<int>();
         public static List<int> genesToChange = new List<int>();
@@ -63,10 +63,12 @@ namespace GA
         public static Results runGA(int iterations)
         {
             GENES = 30;
+
             //Set up for varying allelies can only contain 3 or 5 .can only contain 3 x 5 alleles and 5 x 3 .Num of alleles will be eight
+            alleleSizes.Clear();
             if (varyAlleles)
             {
-                alleleSizes.Clear();
+
 
                 List<int> posOf5s = new List<int>();
                 posOf5s.Clear();
@@ -103,12 +105,12 @@ namespace GA
             else
             {
                 ALLELES = GENES / 3;
-                for(var b=0; b< ALLELES; b++)
+                for (var b = 0; b < ALLELES; b++)
                 {
                     alleleSizes.Add(3);
                 }
             }
-           
+
             if (useEpistasis)
             {
                 GENES -= ALLELES / 2;
@@ -127,7 +129,7 @@ namespace GA
                 if (multipleDeceptives)
                 {
                     var numOfDec = GetRandomNumber(0, ALLELES);
-                    numberOfDecptiveLandscape = numberOfDecptiveLandscape > 0 ? numberOfDecptiveLandscape: numOfDec;
+                    numberOfDecptiveLandscape = numberOfDecptiveLandscape > 0 ? numberOfDecptiveLandscape : numOfDec;
                     while (deceptiveLocations.Count != numberOfDecptiveLandscape)
                     {
                         var loc = GetRandomNumber(0, ALLELES);
@@ -149,8 +151,8 @@ namespace GA
             totalDecptiveBits = 0;
             //Finds the total sum of decptive bits
             foreach (int n in deceptiveLocations)
-            {                
-                   totalDecptiveBits += alleleSizes[n];   
+            {
+                totalDecptiveBits += alleleSizes[n];
             }
 
 
@@ -182,25 +184,22 @@ namespace GA
                     cnt++;
                 }
             }
-            else
-            {
-                peakPhenotype = 1;
-            }
+
             for (var runs = 0; runs < iterations; ++runs)
             {
-                
-                GENERATION.Clear();
+
+                //GENERATION.Clear();
                 populate();
                 count = 0;
-                
+
                 while (!ideal)
                 {
-                   // Console.WriteLine("Num of Org with deceptive: " + numWithDecptive + " At gen: " +count);
+                    // Console.WriteLine("Num of Org with deceptive: " + numWithDecptive + " At gen: " +count);
                     numWithDecptive = 0;
                     getNextGen();
                     count++;
-                    var max = useEpistasis ? 50 : 100;
                     generationBestPerformer = 0;
+                    var max = useEpistasis ? 50 : 100;
                     //Console.WriteLine("Best Score --> "+bestGlobalScore);
                     if (count >= max)
                     {
@@ -220,7 +219,7 @@ namespace GA
             results.numOfDecptiveBits = totalDecptiveBits;
             return results;
 
-            
+
         }
 
         //Populates the array with random 1's and 0's
@@ -244,7 +243,7 @@ namespace GA
         public static void getNextGen()
         {
 
-            
+
             if (deceptiveLandscape)
                 checkDecptives();
 
@@ -269,7 +268,7 @@ namespace GA
                 var bestScore = 0;
                 bestPerformer = 0;
 
-                
+
 
                 // This will select four at random and choose the best to into next generation. 
                 for (var a = 0; a < compSize; a++)
@@ -283,11 +282,11 @@ namespace GA
                         bestScore = score;
                         bestPerformer = sel;
                     }
-                    
+
                 }
                 generationBestPerformer = generationBestPerformer < bestScore ? bestScore : generationBestPerformer;
                 tempGen.Add(GENERATION[bestPerformer]);
-                
+
             }
 
             if (!useEpistasis)
@@ -363,7 +362,7 @@ namespace GA
                     for (var b = 0; b < crossPoitns.Count; b++)
                     {
                         endPoint = b + 1 < crossPoitns.Count ? crossPoitns[b + 1] : GENES;
-                        if (parent == 0)    
+                        if (parent == 0)
                         {
                             gene = gen[pop].spliceGenes(crossPoitns[b], endPoint);
                             nextGen[pop].addGenes(gene, crossPoitns[b], endPoint);
@@ -381,19 +380,26 @@ namespace GA
                     nextGen[pop] = mutate(nextGen[pop]);
                     crossPoitns.Clear();
                 }
-                else if(uniformCrossover)
+                else if (uniformCrossover)
                 {
-                    var rand = GetRandomNumber(1, 10);
-                    for (var g = 0; g < GENES; g++)
+                    var end = 0;
+                    var start = 0;
+                    for (var g = 0; g < ALLELES; g++)
                     {
-                        if(rand < 5)
+                        var rand = GetRandomNumber(1, 10);
+                        if (rand < 5)
                         {
-                            nextGen[pop].genes.SetValue(gen[pop].genes[g], g);
+                            end += alleleSizes[g];
+                            var genes = gen[parent].spliceGenes(start, end);
+                            nextGen[pop].addGenes(genes, start, end);
                         }
                         else
                         {
-                            nextGen[pop].genes.SetValue(gen[parentB].genes[g], g);
+                            end += alleleSizes[g];
+                            var genes = gen[parentB].spliceGenes(start, end);
+                            nextGen[pop].addGenes(genes, start, end);
                         }
+                        start = end;
                     }
                     nextGen[pop].fitness = 0;
                     nextGen[pop].numberOfdecptives = 0;
@@ -403,24 +409,24 @@ namespace GA
                 else if (halfUniformCrossover)
                 {
                     var toSwap = getHammingDistance(gen[pop], gen[parentB]) / 2;
-                    nextGen[pop].genes = gen[pop].genes; 
-                    
+                    nextGen[pop].genes = gen[pop].genes;
+
                     var swaped = 0;
                     List<int> changed = new List<int>();
                     while (swaped != toSwap)
                     {
                         var rand = GetRandomNumber(0, GENES - 1);
-                        
+
                         if (!changed.Contains(rand))
                         {
                             changed.Add(rand);
-                            if (gen[pop].genes[rand] != gen[parentB].genes[rand] )
+                            if (gen[pop].genes[rand] != gen[parentB].genes[rand])
                             {
                                 nextGen[pop].genes.SetValue(gen[parentB].genes[rand], rand);
                                 swaped++;
                             }
-                            
-                       }   
+
+                        }
                     }
                     nextGen[pop].fitness = 0;
                     nextGen[pop].numberOfdecptives = 0;
@@ -442,7 +448,7 @@ namespace GA
         {
             var testSize = 4;
             var bestPartner = 0;
-            
+
             float bestScore = 0;
             for (var a = 0; a <= testSize; a++)
             {
@@ -451,14 +457,14 @@ namespace GA
                 var rand = GetRandomNumber(0, POPULATION);
                 Organism orgA = gen[sel];
                 Organism orgB = gen[rand];
-                if(useHamming)
+                if (useHamming)
                     diff += getHammingDistance(orgA, orgB);
 
                 if (usePehnotype)
                     diff += getPhenoDifference(orgA, orgB);
                 // Gets the score for each partner will select one with the highest score for crossover.
                 // Score is a sum of the fitness of the organism plus any deceptives the orgainims has and its phenotypic difference from the the select organism
-                score = ((fitnessWeight * orgB.fitness) + (orgB.numberOfdecptives * deceptiveReward )) + (phenotypicWeight * diff);
+                score = ((fitnessWeight * orgB.fitness) + (orgB.numberOfdecptives * deceptiveReward)) + (phenotypicWeight * diff);
                 if (score > bestScore)
                 {
                     bestScore = score;
@@ -466,9 +472,9 @@ namespace GA
                 }
             }
 
-            if(uniformCrossover)
-                getDifferenceProfile(gen[sel] , gen[bestPartner]);
-            
+            if (uniformCrossover)
+                getDifferenceProfile(gen[sel], gen[bestPartner]);
+
             return bestPartner;
         }
 
@@ -477,7 +483,7 @@ namespace GA
             var score = 0;
             for (var a = 0; a < GENES; a++)
             {
-                if(orgA.genes[a] != orgB.genes[a])
+                if (orgA.genes[a] != orgB.genes[a])
                 {
                     score++;
                 }
@@ -494,8 +500,8 @@ namespace GA
                 float diff = 0;
                 diff = Math.Abs(orgA.phenotype[a] - orgB.phenotype[a]);
                 float div = alleleSizes[a] == 3 ? 3 : 5;
-                score += diff/div;
-               
+                score += diff / div;
+
             }
             return score;    // Too normailise 3 semes to give best performance
         }
@@ -505,7 +511,7 @@ namespace GA
             genesToChange.Clear();
             for (var a = 0; a < GENES; a++)
             {
-                var val = orgA.genes[a] < orgB.genes[a] ? 1 : 0 ;
+                var val = orgA.genes[a] < orgB.genes[a] ? 1 : 0;
                 genesToChange.Add(val);
 
             }
@@ -556,14 +562,15 @@ namespace GA
                     key = "";
                 }
             }
-            
+
         }
 
         public static Organism mutate(Organism org)
         {
-            for(var g = 0; g < org.genes.Length; g++) {
+            for (var g = 0; g < org.genes.Length; g++)
+            {
 
-            var random = GetRandomNumber(1, 100);
+                var random = GetRandomNumber(1, 100);
                 //Mutaion of gene
                 if (random == 1)
                 {
@@ -583,14 +590,14 @@ namespace GA
         public static void checkForIdeal(List<Organism> gen)
         {
 
-            
-            foreach(Organism org in gen)
+
+            foreach (Organism org in gen)
             {
 
 
                 if (deceptiveLandscape)
                 {
-                            
+
                     if (org.numberOfdecptives == deceptiveLocations.Count && org.fitness == (GENES - totalDecptiveBits))
                     {
                         ideal = true;
@@ -654,11 +661,11 @@ namespace GA
         {
             foreach (Organism org in GENERATION)
             {
-                org.fitness = 0; 
+                org.fitness = 0;
                 var score = 0;
                 if (!useEpistasis)
                 {
-                    score = org.genes.Sum();   
+                    score = org.genes.Sum();
                 }
                 else
                 {
@@ -694,8 +701,8 @@ namespace GA
                 genResults.Add(org.phenotype.Sum());
             }
 
-
-            results.GenerationResults.Add(((float)genResults.Average() / (float)peakPhenotype).ToString() + "," + ((float)genResults.Max() / (float)peakPhenotype).ToString() + "," + ((float)genResults.Min() / (float)peakPhenotype).ToString() + "," + count);
+            var peak = useEpistasis ? 1 : peakPhenotype;
+            results.GenerationResults.Add(((float)genResults.Average() / (float)peak).ToString() + "," + ((float)genResults.Max() / (float)peak).ToString() + "," + ((float)genResults.Min() / (float)peak).ToString() + "," + count + "," + peakPhenotype);
             genResults.Clear();
         }
 
@@ -724,7 +731,7 @@ namespace GA
             }
             return builder.ToString();
         }
-        
+
 
         public static void printOrg(Organism org)
         {
